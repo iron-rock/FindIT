@@ -4,27 +4,35 @@
     "slug": "findit",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/LogoFinal.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/LogoFinal.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#051630"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/LogoFinal.png",
+        "backgroundColor": "#051630"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/LogoFinal.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "5a0276b2-c124-4738-902f-813332482807"
+      }
+    },
+    "owner": "maduroh77",
+    "plugins": [
+      "@sentry/react-native"
+    ]
   }
 }
