@@ -1,12 +1,13 @@
 import { useCallback, useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { CandidateSwipeCard } from "../components/swipe/CandidateSwipeCard";
 import { candidateAnkety } from "../data/candidateAnkety";
 import type { MainTabParamList } from "../navigation/types";
-import { colors } from "../theme/colors";
+import { colors, Text } from "../theme";
 
 const FILTERS_ICON = require("../assets/settings-v2.png");
 
@@ -16,6 +17,7 @@ export type CandidateSwipeScreenProps = BottomTabScreenProps<
 >;
 
 export function CandidateSwipeScreen(_props: CandidateSwipeScreenProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [index, setIndex] = useState(0);
 
@@ -36,7 +38,7 @@ export function CandidateSwipeScreen(_props: CandidateSwipeScreenProps) {
       <View style={styles.filterHeaderRow}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Фильтры поиска"
+          accessibilityLabel={t("swipe.filtersA11y")}
           hitSlop={10}
           onPress={() => {}}
           style={({ pressed }) => [
@@ -55,27 +57,27 @@ export function CandidateSwipeScreen(_props: CandidateSwipeScreenProps) {
         <View style={styles.filterBlocksWrap}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Фильтр: локация"
+            accessibilityLabel={t("swipe.locationCaption")}
             style={({ pressed }) => [
               styles.filterBlock,
               pressed && styles.filterBlockPressed,
             ]}
             onPress={() => {}}
           >
-            <Text style={styles.filterBlockCaption}>Локация</Text>
-            <Text style={styles.filterBlockValue}>Любая</Text>
+            <Text style={styles.filterBlockCaption}>{t("swipe.locationCaption")}</Text>
+            <Text style={styles.filterBlockValue}>{t("swipe.locationAny")}</Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Фильтр: позиция"
+            accessibilityLabel={t("swipe.positionCaption")}
             style={({ pressed }) => [
               styles.filterBlock,
               pressed && styles.filterBlockPressed,
             ]}
             onPress={() => {}}
           >
-            <Text style={styles.filterBlockCaption}>Позиция</Text>
-            <Text style={styles.filterBlockValue}>Все уровни</Text>
+            <Text style={styles.filterBlockCaption}>{t("swipe.positionCaption")}</Text>
+            <Text style={styles.filterBlockValue}>{t("swipe.positionAll")}</Text>
           </Pressable>
         </View>
       </View>
@@ -109,17 +111,14 @@ export function CandidateSwipeScreen(_props: CandidateSwipeScreenProps) {
         <View
           style={[styles.empty, { paddingBottom: Math.max(insets.bottom, 24) }]}
         >
-          <Text style={styles.emptyTitle}>Лента на сегодня закончилась</Text>
-          <Text style={styles.emptyText}>
-            Можно снова пройти доступные анкеты — когда подключится база, список
-            подтянется оттуда.
-          </Text>
+          <Text style={styles.emptyTitle}>{t("swipe.emptyTitle")}</Text>
+          <Text style={styles.emptyText}>{t("swipe.emptyText")}</Text>
           <Pressable
             accessibilityRole="button"
             onPress={rewind}
             style={styles.restartBtn}
           >
-            <Text style={styles.restartLabel}>Показать снова</Text>
+            <Text style={styles.restartLabel}>{t("swipe.restart")}</Text>
           </Pressable>
         </View>
       )}

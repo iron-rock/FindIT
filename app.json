@@ -12,9 +12,17 @@
       "backgroundColor": "#051630"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ironrock.findit",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDisplayName": "FindIT"
+      }
     },
     "android": {
+      "package": "com.ironrock.findit",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/LogoFinal.png",
         "backgroundColor": "#051630"
@@ -30,9 +38,12 @@
         "projectId": "5a0276b2-c124-4738-902f-813332482807"
       }
     },
-    "owner": "maduroh77",
+    "owner": "iron-rock",
     "plugins": [
-      "@sentry/react-native"
+      "@sentry/react-native",
+      "expo-video",
+      "expo-font",
+      "expo-localization"
     ]
   }
 }

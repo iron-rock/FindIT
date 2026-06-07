@@ -12,7 +12,7 @@ export const registerPresetsByRole: Record<
     secondaryValue: string;
   }
 > = {
-  developer: {
+  finder: {
     email: 'alexey.dev@example.com',
     password: 'password123',
     primaryLabel: 'Имя и фамилия',
@@ -20,7 +20,7 @@ export const registerPresetsByRole: Record<
     secondaryLabel: 'Специализация',
     secondaryValue: 'React Native • 4 года',
   },
-  employer: {
+  recruiter: {
     email: 'hr@neuro-soft.example.com',
     password: 'password123',
     primaryLabel: 'Компания',

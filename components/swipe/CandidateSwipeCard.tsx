@@ -4,12 +4,11 @@ import {
   Dimensions,
   PanResponder,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 
 import type { CandidateAnketa } from '../../data/candidateAnkety';
-import { colors } from '../../theme/colors';
+import { colors, Text } from '../../theme';
 
 const SCREEN_W = Dimensions.get('window').width;
 const ROT_MAX_DEG = 11;

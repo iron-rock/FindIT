@@ -1,16 +1,18 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { useMainSession } from '../navigation/MainSessionContext';
 import type { MainTabParamList, RootStackParamList } from '../navigation/types';
-import { colors } from '../theme/colors';
+import { colors, Text } from '../theme';
 
 export type ProfileScreenProps = BottomTabScreenProps<MainTabParamList, 'Profile'>;
 
 export function ProfileScreen({ navigation }: ProfileScreenProps) {
+  const { t } = useTranslation();
   const { role, greetingTitle, greetingSubtitle } = useMainSession();
-  const roleLabel = role === 'developer' ? 'Кандидат' : 'Работодатель';
+  const roleLabel = t(`roles.${role}`);
 
   const signOut = () => {
     const parent = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
@@ -19,19 +21,17 @@ export function ProfileScreen({ navigation }: ProfileScreenProps) {
 
   return (
     <View style={styles.root}>
-      <Text style={styles.title}>Профиль</Text>
+      <Text style={styles.title}>{t('profile.title')}</Text>
       <Text style={styles.subtitle}>{greetingSubtitle}</Text>
 
       <View style={styles.card}>
         <Text style={styles.badge}>{roleLabel}</Text>
         <Text style={styles.primary}>{greetingTitle}</Text>
-        <Text style={styles.secondary}>
-          Многошаговая анкета, настройки и избранное появятся здесь после подключения базы данных.
-        </Text>
+        <Text style={styles.secondary}>{t('profile.cardHint')}</Text>
       </View>
 
       <Pressable accessibilityRole="button" style={({ pressed }) => [styles.outline, pressed && styles.outlinePressed]} onPress={signOut}>
-        <Text style={styles.outlineLabel}>Выйти</Text>
+        <Text style={styles.outlineLabel}>{t('common.signOut')}</Text>
       </Pressable>
     </View>
   );

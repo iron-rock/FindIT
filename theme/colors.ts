@@ -19,6 +19,12 @@ export const colors = {
   /** Затемнение поверх фоновых изображений */
   overlayScrim: 'rgba(5, 22, 48, 0.78)',
   borderSubtle: 'rgba(255, 255, 255, 0.14)',
+
+  /** Акцент свечения (точки/линии на фоне, glow-кнопки) */
+  accent: '#5eb8e8',
+  accentBright: '#8fd3ff',
+  /** Полупрозрачное свечение для теней/ореолов */
+  accentGlow: 'rgba(120, 200, 255, 0.55)',
 } as const;
 
 export type Colors = typeof colors;

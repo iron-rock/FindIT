@@ -8,6 +8,8 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -29,14 +31,14 @@ const ANCHOR_GLYPH_FADE_IN_DELAY_MS = 40;
 
 type TabName = keyof MainTabParamList;
 
-function accessibilityLabelForRoute(route: TabName): string {
+function accessibilityLabelForRoute(route: TabName, t: TFunction): string {
   switch (route) {
     case 'CandidateSwipe':
-      return 'Лента анкет';
+      return t('tabs.feed');
     case 'Chats':
-      return 'Чаты';
+      return t('tabs.chats');
     case 'Profile':
-      return 'Профиль';
+      return t('tabs.profile');
   }
 }
 
@@ -66,6 +68,7 @@ function auxiliarySlots(focused: TabName | undefined): {
  * FAB справа снизу. Затемнение под кластером кнопок — не Modal.
  */
 export function ExpandableFabTabBar({ state, navigation }: BottomTabBarProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   /** Пока `false`, на якоре держим `close`, пока докручивается анимация сворачивания */
   const [collapsedIconReady, setCollapsedIconReady] = useState(true);
@@ -249,15 +252,15 @@ export function ExpandableFabTabBar({ state, navigation }: BottomTabBarProps) {
     [leftAnim],
   );
 
-  const closedMenuHint = `${accessibilityLabelForRoute(above)} и ${accessibilityLabelForRoute(left)}`;
+  const closedMenuHint = `${accessibilityLabelForRoute(above, t)} и ${accessibilityLabelForRoute(left, t)}`;
 
   const showCloseGlyph = open || !collapsedIconReady;
 
   const mainAccessibilityLabel = showCloseGlyph
-    ? 'Закрыть меню'
+    ? t('tabs.closeMenu')
     : focused === 'CandidateSwipe'
-      ? `Меню: ${closedMenuHint}`
-      : `Открыть меню: ${closedMenuHint}`;
+      ? t('tabs.menu', { hint: closedMenuHint })
+      : t('tabs.openMenu', { hint: closedMenuHint });
 
   const sizeAbove =
     above === 'CandidateSwipe' ? 29 : above === 'Chats' ? 25 : 26;
@@ -269,7 +272,7 @@ export function ExpandableFabTabBar({ state, navigation }: BottomTabBarProps) {
       {open ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Закрыть меню"
+          accessibilityLabel={t('tabs.closeMenu')}
           style={styles.backdropHit}
           onPress={beginCloseFab}
         />
@@ -290,7 +293,7 @@ export function ExpandableFabTabBar({ state, navigation }: BottomTabBarProps) {
         <Animated.View pointerEvents={open ? 'box-none' : 'none'} style={[styles.aboveSlot, aboveMotionStyle]}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={accessibilityLabelForRoute(above)}
+            accessibilityLabel={accessibilityLabelForRoute(above, t)}
             disabled={!open}
             hitSlop={8}
             onPress={() => navigateTo(above)}
@@ -307,7 +310,7 @@ export function ExpandableFabTabBar({ state, navigation }: BottomTabBarProps) {
         <Animated.View pointerEvents={open ? 'box-none' : 'none'} style={[styles.leftSlot, leftMotionStyle]}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={accessibilityLabelForRoute(left)}
+            accessibilityLabel={accessibilityLabelForRoute(left, t)}
             disabled={!open}
             hitSlop={8}
             onPress={() => navigateTo(left)}

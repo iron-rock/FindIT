@@ -1,8 +1,9 @@
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 
 import type { MainTabParamList } from '../navigation/types';
-import { colors } from '../theme/colors';
+import { colors, Text } from '../theme';
 
 /** Диалоги для макета; позже — реальная переписка с сервером. */
 const CHAT_ROWS = [
@@ -23,10 +24,11 @@ const CHAT_ROWS = [
 export type ChatsScreenProps = BottomTabScreenProps<MainTabParamList, 'Chats'>;
 
 export function ChatsScreen(_props: ChatsScreenProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.root}>
-      <Text style={styles.title}>Чаты</Text>
-      <Text style={styles.subtitle}>Переписки с работодателями появятся здесь после подключения сообщений.</Text>
+      <Text style={styles.title}>{t('chats.title')}</Text>
+      <Text style={styles.subtitle}>{t('chats.subtitle')}</Text>
       <FlatList
         contentContainerStyle={styles.list}
         data={CHAT_ROWS}

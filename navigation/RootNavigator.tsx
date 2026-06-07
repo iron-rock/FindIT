@@ -5,7 +5,7 @@ import { MainNavigator } from './MainNavigator';
 
 import { RegisterScreen } from '../screens/RegisterScreen';
 import { WelcomeScreen } from '../screens/WelcomeScreen';
-import { colors } from '../theme/colors';
+import { colors, fontFamily } from '../theme';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -32,7 +32,7 @@ export function RootNavigator() {
           headerStyle: { backgroundColor: colors.background },
           headerShadowVisible: false,
           headerTintColor: colors.textPrimary,
-          headerTitleStyle: { fontWeight: '600' },
+          headerTitleStyle: { fontFamily: fontFamily.semiBold, fontWeight: '600' },
           contentStyle: { backgroundColor: colors.background },
         }}
       >
@@ -44,13 +44,7 @@ export function RootNavigator() {
         <Stack.Screen
           name="Register"
           component={RegisterScreen}
-          options={({ route }) => ({
-            title:
-              route.params.role === 'developer'
-                ? 'Новый кандидат'
-                : 'Новый работодатель',
-            headerBackTitle: 'Роль',
-          })}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="Main"
