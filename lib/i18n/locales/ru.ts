@@ -16,7 +16,6 @@ export const ru: TranslationResources = {
     recruiter: 'Работодатель',
   },
   welcome: {
-    tagline: 'Находите IT-таланты одним свайпом',
     whoAreYou: 'Кто вы?',
     finderTitle: 'Я разработчик',
     finderHint: 'Ищу работу',
@@ -34,7 +33,7 @@ export const ru: TranslationResources = {
     createAccount: 'Создайте аккаунт',
     loginHelper: 'Войдите в свой аккаунт, чтобы продолжить.',
     registerHelper: 'Заполните данные — это займёт меньше минуты.',
-    email: 'Email',
+    email: 'Почта',
     emailPlaceholder: 'email@example.com',
     password: 'Пароль',
     passwordPlaceholder: '••••••••',
@@ -55,8 +54,8 @@ export const ru: TranslationResources = {
   },
   register: {
     finder: {
-      accountTitle: 'Создайте аккаунт',
-      accountHint: 'Email и пароль для старта — остальное можно заполнить сейчас или позже в профиле.',
+      accountTitle: 'Создай аккаунт',
+      accountHint: '',
       aboutTitle: 'О себе',
       aboutHint: 'Расскажите рекрутерам, кто вы. Можно пропустить и заполнить в профиле.',
       stackTitle: 'Стек и ожидания',

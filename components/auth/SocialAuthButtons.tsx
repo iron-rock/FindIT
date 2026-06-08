@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { colors, Text } from '../../theme';
+import { colors } from '../../theme';
+import { GlassSurface } from '../ui/GlassSurface';
 
 export type SocialProvider = 'google' | 'apple' | 'linkedin';
 
@@ -26,12 +27,6 @@ export function SocialAuthButtons({ onPress }: SocialAuthButtonsProps) {
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.dividerRow}>
-        <View style={styles.line} />
-        <Text style={styles.dividerText}>{t('auth.orContinueWith')}</Text>
-        <View style={styles.line} />
-      </View>
-
       <View style={styles.buttonsRow}>
         {PROVIDERS.map((provider) => (
           <Pressable
@@ -39,9 +34,16 @@ export function SocialAuthButtons({ onPress }: SocialAuthButtonsProps) {
             accessibilityRole="button"
             accessibilityLabel={t(`auth.${provider.a11yKey}`)}
             onPress={() => onPress(provider.id)}
-            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
           >
-            <Ionicons name={provider.icon} size={22} color={colors.textPrimary} />
+            {({ pressed }) => (
+              <GlassSurface
+                pressed={pressed}
+                radius={12}
+                style={styles.button}
+              >
+                <Ionicons name={provider.icon} size={18} color={colors.textPrimary} />
+              </GlassSurface>
+            )}
           </Pressable>
         ))}
       </View>
@@ -51,40 +53,18 @@ export function SocialAuthButtons({ onPress }: SocialAuthButtonsProps) {
 
 const styles = StyleSheet.create({
   wrap: {
-    gap: 16,
-  },
-  dividerRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-  },
-  line: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.borderSubtle,
-  },
-  dividerText: {
-    fontSize: 12,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
   },
   buttonsRow: {
     flexDirection: 'row',
-    gap: 12,
-  },
-  button: {
-    flex: 1,
-    height: 52,
+    gap: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    backgroundColor: 'rgba(26, 43, 69, 0.7)',
   },
-  buttonPressed: {
-    transform: [{ scale: 0.98 }],
-    backgroundColor: colors.interactivePressed,
+  button: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

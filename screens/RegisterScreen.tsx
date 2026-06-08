@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react';
 import {
   Animated,
+  Easing,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -12,11 +13,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+import { RoleToggle } from '../components/auth/RoleToggle';
 import { SocialAuthButtons } from '../components/auth/SocialAuthButtons';
 import { StepDots } from '../components/auth/StepDots';
 import { ConstellationBackground } from '../components/background/ConstellationBackground';
-import { LanguageToggle } from '../components/i18n/LanguageToggle';
 import { BackLink } from '../components/navigation/BackLink';
+import {
+  GlassSurface,
+  glassButtonRadius,
+  glassInputRadius,
+} from '../components/ui/GlassSurface';
 import { registerPresetsByRole } from '../data/registerPresets';
 import {
   EMPTY_REGISTER_FORM,
@@ -24,9 +30,10 @@ import {
   type RegisterFieldDef,
   type RegisterFieldKey,
   type RegisterFormState,
+  type RegisterStepDef,
 } from '../data/registerStepDefs';
 import type { RootStackParamList, UserRole } from '../navigation/types';
-import { colors, Text, TextInput } from '../theme';
+import { colors, font, Text, TextInput } from '../theme';
 
 export type RegisterScreenProps = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
@@ -34,10 +41,10 @@ export function RegisterScreen({ navigation, route }: RegisterScreenProps) {
   const { role, mode = 'register' } = route.params;
 
   if (mode === 'login') {
-    return <LoginView navigation={navigation} role={role} />;
+    return <LoginView navigation={navigation} role={role ?? 'finder'} />;
   }
 
-  return <RegisterWizard navigation={navigation} role={role} />;
+  return <RegisterWizard navigation={navigation} initialRole={role ?? null} />;
 }
 
 type ViewProps = {
@@ -45,29 +52,61 @@ type ViewProps = {
   role: UserRole;
 };
 
-function RegisterWizard({ navigation, role }: ViewProps) {
-  const { t } = useTranslation();
-  const preset = registerPresetsByRole[role];
-  const steps = REGISTER_STEPS_BY_ROLE[role];
+type WizardProps = {
+  navigation: RegisterScreenProps['navigation'];
+  initialRole: UserRole | null;
+};
 
+function RegisterWizard({ navigation, initialRole }: WizardProps) {
+  const { t } = useTranslation();
+
+  const [role, setRole] = useState<UserRole | null>(initialRole);
+  // stepIndex 0 — выбор роли; 1..N — шаги выбранной роли.
   const [stepIndex, setStepIndex] = useState(0);
-  const [form, setForm] = useState<RegisterFormState>({
-    ...EMPTY_REGISTER_FORM,
-    email: preset.email,
-    password: preset.password,
+  const [form, setForm] = useState<RegisterFormState>(() => {
+    if (!initialRole) {
+      return { ...EMPTY_REGISTER_FORM };
+    }
+    const preset = registerPresetsByRole[initialRole];
+    return { ...EMPTY_REGISTER_FORM, email: preset.email, password: preset.password };
   });
   const [focused, setFocused] = useState<RegisterFieldKey | null>(null);
 
   const contentOpacity = useRef(new Animated.Value(1)).current;
   const contentShift = useRef(new Animated.Value(0)).current;
+  // Появление индикатора шагов после выбора роли (ease-in-out).
+  const progressAnim = useRef(new Animated.Value(initialRole ? 1 : 0)).current;
 
-  const step = steps[stepIndex];
-  const isLast = stepIndex === steps.length - 1;
+  const formSteps = role ? REGISTER_STEPS_BY_ROLE[role] : [];
+  const isRoleStep = stepIndex === 0;
+  const currentStep = isRoleStep ? null : formSteps[stepIndex - 1];
+  const isLast = !isRoleStep && stepIndex - 1 === formSteps.length - 1;
 
   const setField = (key: RegisterFieldKey, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
+  const chooseRole = (next: UserRole) => {
+    const preset = registerPresetsByRole[next];
+    setForm((prev) => ({
+      ...prev,
+      email: prev.email || preset.email,
+      password: prev.password || preset.password,
+    }));
+    setRole(next);
+    // Каждый выбор перезапускает плавное появление степов под выбранную роль.
+    progressAnim.setValue(0);
+    Animated.timing(progressAnim, {
+      toValue: 1,
+      duration: 420,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+  };
+
   const complete = () => {
+    if (!role) {
+      return;
+    }
     const name = role === 'finder' ? form.fullName.trim() : form.company.trim();
     const fallback = t(`roles.${role}`);
     const subtitleParts = [
@@ -102,6 +141,12 @@ function RegisterWizard({ navigation, role }: ViewProps) {
   };
 
   const goNext = () => {
+    if (isRoleStep) {
+      if (role) {
+        animateTo(1);
+      }
+      return;
+    }
     if (isLast) {
       complete();
     } else {
@@ -117,16 +162,68 @@ function RegisterWizard({ navigation, role }: ViewProps) {
     }
   };
 
+  const ctaDisabled = isRoleStep && !role;
+  const ctaLabel = isLast ? t('auth.finish') : t('auth.next');
+
+  const renderFormStep = (step: RegisterStepDef) => (
+    <>
+      <Text style={styles.heading}>{t(step.titleKey)}</Text>
+      {step.hintKey && t(step.hintKey) ? (
+        <Text style={styles.helper}>{t(step.hintKey)}</Text>
+      ) : null}
+
+      <View style={styles.form}>
+        {step.fields.map((field) => (
+          <FormField
+            key={field.key}
+            field={field}
+            value={form[field.key]}
+            focused={focused === field.key}
+            onChangeText={(text) => setField(field.key, text)}
+            onFocus={() => setFocused(field.key)}
+            onBlur={() => setFocused(null)}
+          />
+        ))}
+      </View>
+    </>
+  );
+
   return (
     <AuthShell>
-      <BackLink label={t('common.back')} onPress={goBack} />
+      <BackLink
+        label={t('common.back')}
+        iconColor={colors.textPrimary}
+        labelColor={colors.textPrimary}
+        onPress={goBack}
+      />
 
-      <View style={styles.progress}>
-        <StepDots count={steps.length} current={stepIndex} />
-        <Text style={styles.stepCounter}>
-          {t('auth.stepOf', { current: stepIndex + 1, total: steps.length })}
-        </Text>
-      </View>
+      <Animated.View
+        style={[
+          styles.progress,
+          {
+            opacity: progressAnim,
+            transform: [
+              {
+                translateY: progressAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-10, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        {role ? (
+          <>
+            <StepDots key={role} count={formSteps.length} current={stepIndex - 1} />
+            {!isRoleStep ? (
+              <Text style={styles.stepCounter}>
+                {t('auth.stepOf', { current: stepIndex, total: formSteps.length })}
+              </Text>
+            ) : null}
+          </>
+        ) : null}
+      </Animated.View>
 
       <Animated.View
         style={{
@@ -134,58 +231,47 @@ function RegisterWizard({ navigation, role }: ViewProps) {
           transform: [{ translateX: contentShift }],
         }}
       >
-        <Text style={styles.heading}>{t(step.titleKey)}</Text>
-        <Text style={styles.helper}>{t(step.hintKey)}</Text>
-
-        <View style={styles.form}>
-          {step.fields.map((field) => (
-            <FormField
-              key={field.key}
-              field={field}
-              value={form[field.key]}
-              focused={focused === field.key}
-              onChangeText={(text) => setField(field.key, text)}
-              onFocus={() => setFocused(field.key)}
-              onBlur={() => setFocused(null)}
-            />
-          ))}
-        </View>
-
-        {step.social ? (
-          <View style={styles.socialBlock}>
-            <SocialAuthButtons onPress={() => complete()} />
-          </View>
+        {isRoleStep ? (
+          <>
+            <Text style={styles.heading}>{t('welcome.whoAreYou')}</Text>
+            <View style={styles.roleToggleWrap}>
+              <RoleToggle role={role} onChange={chooseRole} />
+            </View>
+          </>
+        ) : currentStep ? (
+          renderFormStep(currentStep)
         ) : null}
       </Animated.View>
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={isLast ? t('auth.finish') : t('auth.next')}
-        style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
+        accessibilityLabel={ctaLabel}
+        disabled={ctaDisabled}
+        style={styles.ctaWrap}
         onPress={goNext}
       >
-        <Text style={styles.ctaText}>{isLast ? t('auth.finish') : t('auth.next')}</Text>
+        {({ pressed }) => (
+          <GlassSurface
+            pressed={pressed}
+            radius={glassButtonRadius}
+            style={[styles.ctaSurface, ctaDisabled && styles.ctaDisabled]}
+          >
+            <Text style={styles.ctaText}>{ctaLabel}</Text>
+          </GlassSurface>
+        )}
       </Pressable>
 
-      {step.skippable ? (
+      {currentStep?.social ? (
+        <View style={styles.socialBlock}>
+          <SocialAuthButtons onPress={() => complete()} />
+        </View>
+      ) : null}
+
+      {currentStep?.skippable ? (
         <Pressable accessibilityRole="button" onPress={goNext} style={styles.subtleLink}>
           <Text style={styles.subtleLinkText}>{t('auth.skip')}</Text>
         </Pressable>
       ) : null}
-
-      {stepIndex === 0 ? (
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => navigation.replace('Register', { role, mode: 'login' })}
-          style={styles.subtleLink}
-        >
-          <Text style={styles.switchLinkText}>{t('auth.switchToLogin')}</Text>
-        </Pressable>
-      ) : null}
-
-      <View style={styles.langToggleWrap}>
-        <LanguageToggle />
-      </View>
     </AuthShell>
   );
 }
@@ -227,14 +313,19 @@ function LoginView({ navigation, role }: ViewProps) {
 
   return (
     <AuthShell>
-      <BackLink label={t('common.back')} onPress={() => navigation.goBack()} />
+      <BackLink
+        label={t('common.back')}
+        iconColor={colors.textPrimary}
+        labelColor={colors.textPrimary}
+        onPress={() => navigation.goBack()}
+      />
 
       <View style={styles.badge}>
         <Text style={styles.badgeText}>{t(`roles.${role}`)}</Text>
       </View>
 
       <Text style={styles.heading}>{t('auth.welcomeBack')}</Text>
-      <Text style={styles.helper}>{t('auth.loginHelper')}</Text>
+      {/* <Text style={styles.helper}>{t('auth.loginHelper')}</Text> */}
 
       <View style={styles.form}>
         <FormField
@@ -258,27 +349,31 @@ function LoginView({ navigation, role }: ViewProps) {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={t('auth.signInA11y')}
-        style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
+        style={styles.ctaWrapCompact}
         onPress={complete}
       >
-        <Text style={styles.ctaText}>{t('auth.signInCta')}</Text>
+        {({ pressed }) => (
+          <GlassSurface
+            pressed={pressed}
+            radius={glassButtonRadius}
+            style={styles.ctaSurfaceCompact}
+          >
+            <Text style={styles.ctaText}>{t('auth.signInCta')}</Text>
+          </GlassSurface>
+        )}
       </Pressable>
 
       <View style={styles.socialBlock}>
         <SocialAuthButtons onPress={() => complete()} />
       </View>
 
-      <Pressable
+      {/* <Pressable
         accessibilityRole="button"
         onPress={() => navigation.replace('Register', { role, mode: 'register' })}
         style={styles.subtleLink}
       >
         <Text style={styles.switchLinkText}>{t('auth.switchToRegister')}</Text>
-      </Pressable>
-
-      <View style={styles.langToggleWrap}>
-        <LanguageToggle />
-      </View>
+      </Pressable> */}
     </AuthShell>
   );
 }
@@ -326,24 +421,25 @@ function FormField({ field, value, focused, onChangeText, onFocus, onBlur }: For
   return (
     <View style={styles.fieldGroup}>
       <Text style={styles.label}>{t(field.labelKey)}</Text>
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        secureTextEntry={field.secure}
-        multiline={field.multiline}
-        keyboardType={field.keyboardType ?? 'default'}
-        autoCapitalize={field.autoCapitalize ?? 'sentences'}
-        autoCorrect={!field.secure}
-        placeholder={t(field.placeholderKey)}
-        placeholderTextColor={colors.textMuted}
-        style={[
-          styles.input,
-          field.multiline && styles.inputMultiline,
-          focused && styles.inputFocused,
-        ]}
-      />
+      <GlassSurface radius={glassInputRadius} highlight={focused}>
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          secureTextEntry={field.secure}
+          multiline={field.multiline}
+          keyboardType={field.keyboardType ?? 'default'}
+          autoCapitalize={field.autoCapitalize ?? 'sentences'}
+          autoCorrect={!field.secure}
+          placeholder={t(field.placeholderKey)}
+          placeholderTextColor="rgba(255, 255, 255, 0.45)"
+          style={[
+            styles.input,
+            field.multiline && styles.inputMultiline,
+          ]}
+        />
+      </GlassSurface>
     </View>
   );
 }
@@ -375,99 +471,110 @@ const styles = StyleSheet.create({
   },
   stepCounter: {
     fontSize: 13,
-    fontWeight: '600',
-    color: colors.textMuted,
+    fontWeight: '400',
+    color: colors.textPrimary,
     letterSpacing: 0.3,
+    ...font('400'),
   },
   badge: {
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: 'rgba(94, 184, 232, 0.14)',
-    borderWidth: 1,
-    borderColor: colors.accent,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.borderSubtle,
     marginTop: 8,
     marginBottom: 16,
   },
   badgeText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '400',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
-    color: colors.accentBright,
+    color: colors.textPrimary,
+    ...font('400'),
   },
   heading: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 26,
+    fontWeight: '500',
     color: colors.textPrimary,
-    letterSpacing: -0.6,
+    letterSpacing: -0.4,
     marginBottom: 8,
+    ...font('500'),
   },
   helper: {
     fontSize: 15,
-    color: colors.textMuted,
+    fontWeight: '400',
+    color: colors.textPrimary,
     lineHeight: 21,
     marginBottom: 24,
     maxWidth: 340,
+    ...font('400'),
   },
   form: {
     gap: 16,
+  },
+  roleToggleWrap: {
+    marginTop: 8,
+  },
+  ctaDisabled: {
+    opacity: 0.45,
   },
   fieldGroup: {
     gap: 8,
   },
   label: {
     fontSize: 13,
-    fontWeight: '600',
-    color: colors.textMuted,
+    fontWeight: '400',
+    color: colors.textPrimary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    ...font('400'),
   },
   input: {
-    backgroundColor: 'rgba(26, 43, 69, 0.7)',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: Platform.OS === 'ios' ? 15 : 12,
-    fontSize: 16,
+    backgroundColor: 'transparent',
+    paddingHorizontal: 14,
+    paddingVertical: Platform.OS === 'ios' ? 12 : 10,
+    fontSize: 15,
+    fontWeight: '400',
     color: colors.textPrimary,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    ...font('400'),
   },
   inputMultiline: {
-    minHeight: 96,
+    minHeight: 88,
     textAlignVertical: 'top',
-    paddingTop: 14,
-  },
-  inputFocused: {
-    borderColor: colors.accent,
-    backgroundColor: colors.surface,
+    paddingTop: 12,
   },
   socialBlock: {
-    marginTop: 24,
-  },
-  cta: {
-    marginTop: 26,
-    backgroundColor: colors.interactive,
-    borderRadius: 14,
-    paddingVertical: 17,
+    marginTop: 20,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.accent,
-    shadowColor: '#000814',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 6,
   },
-  ctaPressed: {
-    backgroundColor: colors.interactivePressed,
-    transform: [{ scale: 0.99 }],
+  ctaWrap: {
+    marginTop: 26,
+  },
+  ctaWrapCompact: {
+    marginTop: 26,
+    alignSelf: 'center',
+  },
+  ctaSurface: {
+    paddingVertical: 13,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ctaSurfaceCompact: {
+    paddingVertical: 13,
+    paddingHorizontal: 32,
+    minWidth: 140,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   ctaText: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '500',
     color: colors.textPrimary,
+    ...font('500'),
   },
   subtleLink: {
     marginTop: 16,
@@ -477,18 +584,14 @@ const styles = StyleSheet.create({
   },
   subtleLinkText: {
     fontSize: 15,
-    color: colors.textMuted,
-    fontWeight: '600',
+    color: colors.textPrimary,
+    fontWeight: '400',
+    ...font('400'),
   },
   switchLinkText: {
     fontSize: 15,
-    color: colors.accentBright,
-    fontWeight: '600',
-  },
-  langToggleWrap: {
-    alignItems: 'flex-end',
-    paddingHorizontal: 4,
-    marginTop: 24,
-    marginBottom: 8,
+    color: colors.textPrimary,
+    fontWeight: '400',
+    ...font('400'),
   },
 });

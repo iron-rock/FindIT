@@ -31,7 +31,7 @@ export type RegisterFieldDef = {
 export type RegisterStepDef = {
   id: string;
   titleKey: I18nKey;
-  hintKey: I18nKey;
+  hintKey?: I18nKey;
   fields: RegisterFieldDef[];
   skippable: boolean;
   social?: boolean;
@@ -57,7 +57,7 @@ export const FINDER_REGISTER_STEPS: RegisterStepDef[] = [
   {
     id: 'account',
     titleKey: 'register.finder.accountTitle',
-    hintKey: 'register.finder.accountHint',
+    // hintKey: 'register.finder.accountHint',
     fields: [EMAIL_FIELD, PASSWORD_FIELD],
     skippable: false,
     social: true,
@@ -65,7 +65,7 @@ export const FINDER_REGISTER_STEPS: RegisterStepDef[] = [
   {
     id: 'about',
     titleKey: 'register.finder.aboutTitle',
-    hintKey: 'register.finder.aboutHint',
+    // hintKey: 'register.finder.aboutHint',
     skippable: true,
     fields: [
       { key: 'fullName', labelKey: 'register.finder.fullName', placeholderKey: 'register.finder.fullNamePh', autoCapitalize: 'words' },
@@ -76,7 +76,7 @@ export const FINDER_REGISTER_STEPS: RegisterStepDef[] = [
   {
     id: 'stack',
     titleKey: 'register.finder.stackTitle',
-    hintKey: 'register.finder.stackHint',
+    // hintKey: 'register.finder.stackHint',
     skippable: true,
     fields: [
       { key: 'stack', labelKey: 'register.finder.stack', placeholderKey: 'register.finder.stackPh' },
@@ -88,7 +88,7 @@ export const FINDER_REGISTER_STEPS: RegisterStepDef[] = [
   {
     id: 'ai',
     titleKey: 'register.finder.aiTitle',
-    hintKey: 'register.finder.aiHint',
+    // hintKey: 'register.finder.aiHint',
     skippable: true,
     fields: [
       { key: 'aiTools', labelKey: 'register.finder.aiTools', placeholderKey: 'register.finder.aiToolsPh', multiline: true },
@@ -97,7 +97,7 @@ export const FINDER_REGISTER_STEPS: RegisterStepDef[] = [
   {
     id: 'vcs',
     titleKey: 'register.finder.vcsTitle',
-    hintKey: 'register.finder.vcsHint',
+    // hintKey: 'register.finder.vcsHint',
     skippable: true,
     fields: [
       { key: 'github', labelKey: 'register.finder.github', placeholderKey: 'register.finder.githubPh', autoCapitalize: 'none' },
@@ -109,7 +109,7 @@ export const RECRUITER_REGISTER_STEPS: RegisterStepDef[] = [
   {
     id: 'account',
     titleKey: 'register.recruiter.accountTitle',
-    hintKey: 'register.recruiter.accountHint',
+    // hintKey: 'register.recruiter.accountHint',
     fields: [EMAIL_FIELD, PASSWORD_FIELD],
     skippable: false,
     social: true,
@@ -117,7 +117,7 @@ export const RECRUITER_REGISTER_STEPS: RegisterStepDef[] = [
   {
     id: 'company',
     titleKey: 'register.recruiter.companyTitle',
-    hintKey: 'register.recruiter.companyHint',
+    // hintKey: 'register.recruiter.companyHint',
     skippable: true,
     fields: [
       { key: 'company', labelKey: 'register.recruiter.company', placeholderKey: 'register.recruiter.companyPh', autoCapitalize: 'words' },

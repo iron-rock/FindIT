@@ -8,6 +8,10 @@ type BackLinkProps = {
   onPress: () => void;
   accessibilityLabel?: string;
   label?: string;
+  /** Только стрелка, без подписи «Назад». */
+  iconOnly?: boolean;
+  iconColor?: string;
+  labelColor?: string;
 };
 
 /** Кнопка «назад» для auth-флоу: крупная стрелка + лёгкая подпись. */
@@ -15,6 +19,9 @@ export function BackLink({
   onPress,
   accessibilityLabel,
   label,
+  iconOnly = false,
+  iconColor = colors.accentBright,
+  labelColor = colors.accentBright,
 }: BackLinkProps) {
   const { t } = useTranslation();
   const resolvedLabel = label ?? t("common.back");
@@ -28,8 +35,14 @@ export function BackLink({
       style={({ pressed }) => [styles.root, pressed && styles.pressed]}
     >
       <View style={styles.row}>
-        <Ionicons name="chevron-back" size={12} color={colors.accentBright} />
-        <Text style={styles.label}>{resolvedLabel}</Text>
+        <Ionicons
+          name="chevron-back"
+          size={iconOnly ? 20 : 12}
+          color={iconColor}
+        />
+        {!iconOnly ? (
+          <Text style={[styles.label, { color: labelColor }]}>{resolvedLabel}</Text>
+        ) : null}
       </View>
     </Pressable>
   );

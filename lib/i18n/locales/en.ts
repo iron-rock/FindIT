@@ -14,7 +14,6 @@ export const en = {
     recruiter: 'Employer',
   },
   welcome: {
-    tagline: 'Find IT talent with a single swipe',
     whoAreYou: 'Who are you?',
     finderTitle: "I'm a developer",
     finderHint: 'Looking for a job',
@@ -53,8 +52,8 @@ export const en = {
   },
   register: {
     finder: {
-      accountTitle: 'Create your account',
-      accountHint: 'Email and password to get started — the rest you can fill in now or later in your profile.',
+      accountTitle: 'Create account',
+      accountHint: '',
       aboutTitle: 'About you',
       aboutHint: 'Tell recruiters who you are. You can skip this and fill it in your profile.',
       stackTitle: 'Stack & expectations',

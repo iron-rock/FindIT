@@ -4,10 +4,10 @@ import { Animated, StyleSheet } from 'react-native';
 
 import { colors } from '../theme/colors';
 
-const SPLASH_SOURCE = require('../assets/SplashFinal_clean.mp4');
+const SPLASH_SOURCE = require('../assets/SplashNew.mp4');
 
-/** Подстраховка: если событие окончания не пришло, скрываем сплеш принудительно. */
-const MAX_DURATION_MS = 8000;
+/** Длительность сплеша до начала затухания. */
+const SPLASH_DURATION_MS = 3000;
 /** Длительность плавного затухания в конце. */
 const FADE_OUT_MS = 600;
 
@@ -23,6 +23,7 @@ export function SplashVideo({ onFinish }: SplashVideoProps) {
   const player = useVideoPlayer(SPLASH_SOURCE, (instance) => {
     instance.loop = false;
     instance.muted = true;
+    instance.volume = 0;
     // Не запускаем сразу: ждём, пока появится первый кадр (см. statusChange).
   });
 
@@ -31,12 +32,13 @@ export function SplashVideo({ onFinish }: SplashVideoProps) {
       return;
     }
     finishedRef.current = true;
+    player.pause();
     Animated.timing(opacity, {
       toValue: 0,
       duration: FADE_OUT_MS,
       useNativeDriver: true,
     }).start(() => onFinish());
-  }, [opacity, onFinish]);
+  }, [opacity, onFinish, player]);
 
   useEffect(() => {
     // Как только видео готово (первый кадр уже виден) — даём ему «подержаться»
@@ -52,13 +54,11 @@ export function SplashVideo({ onFinish }: SplashVideoProps) {
       player.play();
     }
 
-    const endSub = player.addListener('playToEnd', finishOnce);
-    const fallback = setTimeout(finishOnce, MAX_DURATION_MS);
+    const timer = setTimeout(finishOnce, SPLASH_DURATION_MS);
 
     return () => {
       statusSub.remove();
-      endSub.remove();
-      clearTimeout(fallback);
+      clearTimeout(timer);
     };
   }, [player, finishOnce]);
 

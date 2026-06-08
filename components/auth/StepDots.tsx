@@ -73,7 +73,7 @@ export function StepDots({ count, current }: StepDotsProps) {
     <View
       style={styles.row}
       accessibilityRole="progressbar"
-      accessibilityLabel={t('common.progressA11y', { current: current + 1, total: count })}
+      // accessibilityLabel={t('common.progressA11y', { current: current + 1, total: count })}
     >
       {lit.map((value, index) => {
         const opacity = value.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] });

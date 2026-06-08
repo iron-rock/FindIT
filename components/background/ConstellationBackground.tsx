@@ -120,6 +120,5 @@ export function ConstellationBackground() {
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.background,
   },
 });
