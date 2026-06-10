@@ -1,0 +1,94 @@
+import { StyleSheet, View } from "react-native";
+import { Platform } from "react-native";
+import { useTranslation } from "react-i18next";
+
+import type { RegisterFieldDef } from "../../data/registerStepDefs";
+import { colors, font, Text, TextInput } from "../../theme";
+import { glassInputRadius } from "../ui/GlassSurface";
+
+type FormFieldProps = {
+  field: RegisterFieldDef;
+  value: string;
+  focused: boolean;
+  onChangeText: (text: string) => void;
+  onFocus: () => void;
+  onBlur: () => void;
+};
+
+/** Поле формы авторизации/регистрации на «стеклянной» поверхности. */
+export function FormField({
+  field,
+  value,
+  focused,
+  onChangeText,
+  onFocus,
+  onBlur,
+}: FormFieldProps) {
+  const { t } = useTranslation();
+
+  return (
+    <View style={styles.fieldGroup}>
+      <Text style={styles.label}>{t(field.labelKey)}</Text>
+      <View
+        style={[
+          styles.inputWrap,
+          { borderRadius: glassInputRadius },
+          focused && styles.inputWrapFocused,
+        ]}
+      >
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          secureTextEntry={field.secure}
+          multiline={field.multiline}
+          keyboardType={field.keyboardType ?? "default"}
+          autoCapitalize={field.autoCapitalize ?? "sentences"}
+          autoCorrect={!field.secure}
+          placeholder={t(field.placeholderKey)}
+          placeholderTextColor="rgba(255, 255, 255, 0.45)"
+          style={[styles.input, field.multiline && styles.inputMultiline]}
+        />
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  fieldGroup: {
+    gap: 8,
+  },
+  inputWrap: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.22)",
+    overflow: "hidden",
+  },
+  inputWrapFocused: {
+    borderColor: colors.accentBright,
+    borderWidth: 1.5,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: "400",
+    color: colors.textPrimary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    ...font("400"),
+  },
+  input: {
+    backgroundColor: "transparent",
+    paddingHorizontal: 14,
+    paddingVertical: Platform.OS === "ios" ? 12 : 10,
+    fontSize: 15,
+    fontWeight: "400",
+    color: colors.textPrimary,
+    ...font("400"),
+  },
+  inputMultiline: {
+    minHeight: 88,
+    textAlignVertical: "top",
+    paddingTop: 12,
+  },
+});

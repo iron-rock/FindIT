@@ -32,7 +32,11 @@ export function BackLink({
       accessibilityLabel={resolvedA11y}
       hitSlop={12}
       onPress={onPress}
-      style={({ pressed }) => [styles.root, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.root,
+        iconOnly && styles.rootIconOnly,
+        pressed && styles.pressed,
+      ]}
     >
       <View style={styles.row}>
         <Ionicons
@@ -55,6 +59,9 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     marginLeft: -4,
     marginBottom: 6,
+  },
+  rootIconOnly: {
+    marginBottom: 0,
   },
   pressed: {
     opacity: 0.72,

@@ -4,7 +4,7 @@ import { Animated, StyleSheet } from 'react-native';
 
 import { colors } from '../theme/colors';
 
-const SPLASH_SOURCE = require('../assets/SplashNew.mp4');
+const SPLASH_SOURCE = require('../assets/SplashIntro.mp4');
 
 /** Длительность сплеша до начала затухания. */
 const SPLASH_DURATION_MS = 3000;

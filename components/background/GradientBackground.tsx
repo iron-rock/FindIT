@@ -24,12 +24,12 @@ export function GradientBackground() {
           id="premiumBackground"
           cx={width / 2}
           cy={height * 0.42}
-          r={Math.max(width, height) * 0.75}
+          r={Math.max(width, height) * 0.95}
           gradientUnits="userSpaceOnUse"
         >
-          <Stop offset="0" stopColor="#1B3E6B" />
-          <Stop offset="0.5" stopColor="#0C2245" />
-          <Stop offset="1" stopColor="#02101F" />
+          <Stop offset="0" stopColor="#2C5C97" />
+          <Stop offset="0.5" stopColor="#163861" />
+          <Stop offset="1" stopColor="#0A2440" />
         </RadialGradient>
       </Defs>
       <Rect

@@ -12,7 +12,6 @@ export type AuthMode = 'login' | 'register';
 
 export type RootStackParamList = {
   Welcome: undefined;
-  Register: { role?: UserRole; mode?: AuthMode };
   Main: {
     role: UserRole;
     greetingTitle: string;

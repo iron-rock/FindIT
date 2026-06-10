@@ -3,7 +3,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { MainNavigator } from './MainNavigator';
 
-import { RegisterScreen } from '../screens/RegisterScreen';
 import { WelcomeScreen } from '../screens/WelcomeScreen';
 import { colors, fontFamily } from '../theme';
 import type { RootStackParamList } from './types';
@@ -39,11 +38,6 @@ export function RootNavigator() {
         <Stack.Screen
           name="Welcome"
           component={WelcomeScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Register"
-          component={RegisterScreen}
           options={{ headerShown: false }}
         />
         <Stack.Screen

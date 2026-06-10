@@ -31,8 +31,8 @@ export const useLiquidGlass = ((): boolean => {
 })();
 
 /** Радиусы «стекла» по режимам — общие для кнопок и инпутов. */
-export const glassButtonRadius = useLiquidGlass ? 18 : isIOS ? 14 : 12;
-export const glassInputRadius = useLiquidGlass ? 16 : isIOS ? 12 : 10;
+export const glassButtonRadius = useLiquidGlass ? 14 : isIOS ? 10 : 8;
+export const glassInputRadius = useLiquidGlass ? 12 : isIOS ? 8 : 8;
 
 type GlassSurfaceProps = {
   children: ReactNode;
