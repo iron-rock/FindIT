@@ -4,7 +4,8 @@ import type { UserRole } from '../navigation/types';
 export const registerPresetsByRole: Record<
   UserRole,
   {
-    email: string;
+    phone: string;
+    phoneCountry: string;
     password: string;
     primaryLabel: string;
     primaryValue: string;
@@ -13,7 +14,8 @@ export const registerPresetsByRole: Record<
   }
 > = {
   finder: {
-    email: 'alexey.dev@example.com',
+    phone: '900 123-45-67',
+    phoneCountry: 'RU',
     password: 'password123',
     primaryLabel: 'Имя и фамилия',
     primaryValue: 'Алексей Петров',
@@ -21,7 +23,8 @@ export const registerPresetsByRole: Record<
     secondaryValue: 'React Native • 4 года',
   },
   recruiter: {
-    email: 'hr@neuro-soft.example.com',
+    phone: '900 987-65-43',
+    phoneCountry: 'RU',
     password: 'password123',
     primaryLabel: 'Компания',
     primaryValue: 'НейроСофт',

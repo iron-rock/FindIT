@@ -1,6 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
-import { useTranslation } from 'react-i18next';
 
 import { colors } from '../../theme';
 
@@ -9,26 +8,28 @@ type StepDotsProps = {
   current: number;
 };
 
+function useAnimatedValues(count: number) {
+  const store = useRef<Animated.Value[]>([]);
+
+  if (store.current.length < count) {
+    for (let i = store.current.length; i < count; i += 1) {
+      store.current.push(new Animated.Value(0));
+    }
+  }
+
+  return useMemo(() => store.current.slice(0, count), [count]);
+}
+
 /**
  * Индикатор этапов регистрации: светящиеся точки в стиле фона-созвездия,
  * растянутые на всю ширину и соединённые линиями. Пройденные/текущая горят
  * ярко и слегка пульсируют, будущие — приглушены.
  */
 export function StepDots({ count, current }: StepDotsProps) {
-  const { t } = useTranslation();
-
-  // Состояние «зажжённости» точки (0 — будущая, 1 — пройденная/текущая).
-  const lit = useRef(
-    Array.from({ length: count }, () => new Animated.Value(0)),
-  ).current;
-  // Состояние заливки линий между точками.
-  const fills = useRef(
-    Array.from({ length: Math.max(count - 1, 0) }, () => new Animated.Value(0)),
-  ).current;
-  // Непрерывная пульсация для каждой точки (своя длительность → живая «волна»).
-  const pulse = useRef(
-    Array.from({ length: count }, () => new Animated.Value(0)),
-  ).current;
+  const safeCount = Math.max(count, 1);
+  const lit = useAnimatedValues(safeCount);
+  const pulse = useAnimatedValues(safeCount);
+  const fills = useAnimatedValues(Math.max(safeCount - 1, 0));
 
   useEffect(() => {
     const dotAnims = lit.map((value, index) =>
@@ -70,25 +71,23 @@ export function StepDots({ count, current }: StepDotsProps) {
   }, [pulse]);
 
   return (
-    <View
-      style={styles.row}
-      accessibilityRole="progressbar"
-      // accessibilityLabel={t('common.progressA11y', { current: current + 1, total: count })}
-    >
+    <View style={styles.row} accessibilityRole="progressbar">
       {lit.map((value, index) => {
+        const pulseValue = pulse[index];
         const opacity = value.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] });
         const baseScale = value.interpolate({ inputRange: [0, 1], outputRange: [0.78, 1] });
-        const pulseScale = pulse[index].interpolate({
+        const pulseScale = pulseValue.interpolate({
           inputRange: [0, 1],
           outputRange: [1, 1.16],
         });
         const scale = Animated.multiply(baseScale, pulseScale);
         const glowOpacity = Animated.multiply(
           value.interpolate({ inputRange: [0, 1], outputRange: [0, 0.6] }),
-          pulse[index].interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] }),
+          pulseValue.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] }),
         );
 
-        const isLast = index === count - 1;
+        const isLast = index === safeCount - 1;
+        const lineFill = fills[index];
 
         return (
           <View
@@ -105,13 +104,13 @@ export function StepDots({ count, current }: StepDotsProps) {
               />
             </View>
 
-            {index < count - 1 ? (
+            {lineFill ? (
               <View style={styles.lineTrack}>
                 <Animated.View
                   style={[
                     styles.lineFill,
                     {
-                      opacity: fills[index].interpolate({
+                      opacity: lineFill.interpolate({
                         inputRange: [0, 1],
                         outputRange: [0, 1],
                       }),

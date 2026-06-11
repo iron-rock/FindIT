@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { BackLink } from "../navigation/BackLink";
 import { colors } from "../../theme";
-import { glassButtonRadius } from "../ui/GlassSurface";
+import { glassAuthRadius } from "../ui/GlassSurface";
 
 export type SocialProvider = "google" | "apple" | "linkedin";
 
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     height: 44,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: glassButtonRadius,
+    borderRadius: glassAuthRadius,
     backgroundColor: "transparent",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.22)",

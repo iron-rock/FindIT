@@ -3,6 +3,9 @@ import type { I18nKey } from '../lib/i18n/types';
 
 /** Ключи полей мастера регистрации (значения хранятся в FormState). */
 export type RegisterFieldKey =
+  | 'phone'
+  | 'phoneCountry'
+  | 'otpCode'
   | 'email'
   | 'password'
   | 'fullName'
@@ -24,12 +27,15 @@ export type RegisterFieldDef = {
   placeholderKey: I18nKey;
   secure?: boolean;
   multiline?: boolean;
-  keyboardType?: 'default' | 'email-address' | 'numeric';
+  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
   autoCapitalize?: 'none' | 'sentences' | 'words';
 };
 
+export type RegisterStepKind = 'form' | 'verify';
+
 export type RegisterStepDef = {
   id: string;
+  kind?: RegisterStepKind;
   titleKey: I18nKey;
   hintKey?: I18nKey;
   fields: RegisterFieldDef[];
@@ -37,95 +43,51 @@ export type RegisterStepDef = {
   social?: boolean;
 };
 
-const EMAIL_FIELD: RegisterFieldDef = {
-  key: 'email',
-  labelKey: 'auth.email',
-  placeholderKey: 'auth.emailPlaceholder',
-  keyboardType: 'email-address',
+const OTP_FIELD: RegisterFieldDef = {
+  key: 'otpCode',
+  labelKey: 'auth.otp',
+  placeholderKey: 'auth.otpPlaceholder',
+  keyboardType: 'phone-pad',
   autoCapitalize: 'none',
 };
 
-const PASSWORD_FIELD: RegisterFieldDef = {
-  key: 'password',
-  labelKey: 'auth.password',
-  placeholderKey: 'auth.passwordPlaceholder',
-  secure: true,
+const VERIFY_STEP: RegisterStepDef = {
+  id: 'verify',
+  kind: 'verify',
+  titleKey: 'auth.verifyPhoneTitle',
+  hintKey: 'auth.verifyPhoneHint',
+  fields: [OTP_FIELD],
+  skippable: true,
+};
+
+const AI_FIELD: RegisterFieldDef = {
+  key: 'aiTools',
+  labelKey: 'register.finder.aiTools',
+  placeholderKey: 'register.finder.aiToolsPh',
+  multiline: true,
+};
+
+const GITHUB_FIELD: RegisterFieldDef = {
+  key: 'github',
+  labelKey: 'register.finder.github',
+  placeholderKey: 'register.finder.githubPh',
   autoCapitalize: 'none',
 };
 
+/** Регистрация finder: подтверждение телефона → ИИ + GitHub. Остальное — в профиле. */
 export const FINDER_REGISTER_STEPS: RegisterStepDef[] = [
+  VERIFY_STEP,
   {
-    id: 'account',
-    titleKey: 'register.finder.accountTitle',
-    // hintKey: 'register.finder.accountHint',
-    fields: [EMAIL_FIELD, PASSWORD_FIELD],
-    skippable: false,
-    social: true,
-  },
-  {
-    id: 'about',
-    titleKey: 'register.finder.aboutTitle',
-    // hintKey: 'register.finder.aboutHint',
-    skippable: true,
-    fields: [
-      { key: 'fullName', labelKey: 'register.finder.fullName', placeholderKey: 'register.finder.fullNamePh', autoCapitalize: 'words' },
-      { key: 'headline', labelKey: 'register.finder.headline', placeholderKey: 'register.finder.headlinePh' },
-      { key: 'years', labelKey: 'register.finder.years', placeholderKey: 'register.finder.yearsPh', keyboardType: 'numeric' },
-    ],
-  },
-  {
-    id: 'stack',
-    titleKey: 'register.finder.stackTitle',
-    // hintKey: 'register.finder.stackHint',
-    skippable: true,
-    fields: [
-      { key: 'stack', labelKey: 'register.finder.stack', placeholderKey: 'register.finder.stackPh' },
-      { key: 'position', labelKey: 'register.finder.position', placeholderKey: 'register.finder.positionPh' },
-      { key: 'salary', labelKey: 'register.finder.salary', placeholderKey: 'register.finder.salaryPh' },
-      { key: 'workFormat', labelKey: 'register.finder.workFormat', placeholderKey: 'register.finder.workFormatPh' },
-    ],
-  },
-  {
-    id: 'ai',
+    id: 'highlights',
     titleKey: 'register.finder.aiTitle',
-    // hintKey: 'register.finder.aiHint',
+    hintKey: 'register.finder.aiHint',
     skippable: true,
-    fields: [
-      { key: 'aiTools', labelKey: 'register.finder.aiTools', placeholderKey: 'register.finder.aiToolsPh', multiline: true },
-    ],
-  },
-  {
-    id: 'vcs',
-    titleKey: 'register.finder.vcsTitle',
-    // hintKey: 'register.finder.vcsHint',
-    skippable: true,
-    fields: [
-      { key: 'github', labelKey: 'register.finder.github', placeholderKey: 'register.finder.githubPh', autoCapitalize: 'none' },
-    ],
+    fields: [AI_FIELD, GITHUB_FIELD],
   },
 ];
 
-export const RECRUITER_REGISTER_STEPS: RegisterStepDef[] = [
-  {
-    id: 'account',
-    titleKey: 'register.recruiter.accountTitle',
-    // hintKey: 'register.recruiter.accountHint',
-    fields: [EMAIL_FIELD, PASSWORD_FIELD],
-    skippable: false,
-    social: true,
-  },
-  {
-    id: 'company',
-    titleKey: 'register.recruiter.companyTitle',
-    // hintKey: 'register.recruiter.companyHint',
-    skippable: true,
-    fields: [
-      { key: 'company', labelKey: 'register.recruiter.company', placeholderKey: 'register.recruiter.companyPh', autoCapitalize: 'words' },
-      { key: 'industry', labelKey: 'register.recruiter.industry', placeholderKey: 'register.recruiter.industryPh' },
-      { key: 'contact', labelKey: 'register.recruiter.contact', placeholderKey: 'register.recruiter.contactPh', autoCapitalize: 'words' },
-    ],
-  },
-];
+/** Регистрация recruiter: только подтверждение телефона, дальше — профиль. */
+export const RECRUITER_REGISTER_STEPS: RegisterStepDef[] = [VERIFY_STEP];
 
 export const REGISTER_STEPS_BY_ROLE: Record<UserRole, RegisterStepDef[]> = {
   finder: FINDER_REGISTER_STEPS,
@@ -135,6 +97,9 @@ export const REGISTER_STEPS_BY_ROLE: Record<UserRole, RegisterStepDef[]> = {
 export type RegisterFormState = Record<RegisterFieldKey, string>;
 
 export const EMPTY_REGISTER_FORM: RegisterFormState = {
+  phone: '',
+  phoneCountry: 'RU',
+  otpCode: '',
   email: '',
   password: '',
   fullName: '',
@@ -150,3 +115,6 @@ export const EMPTY_REGISTER_FORM: RegisterFormState = {
   industry: '',
   contact: '',
 };
+
+/** Макс. число точек до выбора роли (finder: account + 2 шага). */
+export const REGISTER_DOTS_PLACEHOLDER = 3;

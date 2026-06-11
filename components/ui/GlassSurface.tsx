@@ -33,6 +33,8 @@ export const useLiquidGlass = ((): boolean => {
 /** Радиусы «стекла» по режимам — общие для кнопок и инпутов. */
 export const glassButtonRadius = useLiquidGlass ? 14 : isIOS ? 10 : 8;
 export const glassInputRadius = useLiquidGlass ? 12 : isIOS ? 8 : 8;
+/** Минимальный радиус рамки на экранах входа/регистрации (как кнопка «Регистрация» на welcome). */
+export const glassAuthRadius = 4;
 
 type GlassSurfaceProps = {
   children: ReactNode;

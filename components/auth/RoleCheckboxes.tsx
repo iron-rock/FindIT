@@ -4,13 +4,15 @@ import { useTranslation } from "react-i18next";
 
 import type { UserRole } from "../../navigation/types";
 import { colors, font, Text } from "../../theme";
-import { glassButtonRadius } from "../ui/GlassSurface";
+import { glassAuthRadius } from "../ui/GlassSurface";
 
 type RoleCheckboxesProps = {
   role: UserRole | null;
   onChange: (role: UserRole) => void;
   /** 'column' — карточки в столбик (по умолчанию), 'row' — рядом в один ряд. */
   layout?: "row" | "column";
+  /** Меньший текст на шаге выбора роли при регистрации. */
+  compact?: boolean;
 };
 
 /**
@@ -21,6 +23,7 @@ export function RoleCheckboxes({
   role,
   onChange,
   layout = "column",
+  compact = false,
 }: RoleCheckboxesProps) {
   const { t } = useTranslation();
   const row = layout === "row";
@@ -33,6 +36,7 @@ export function RoleCheckboxes({
         selected={role === "finder"}
         onPress={() => onChange("finder")}
         row={row}
+        compact={compact}
       />
       <RoleCheckbox
         label={t("roles.recruiter")}
@@ -40,6 +44,7 @@ export function RoleCheckboxes({
         selected={role === "recruiter"}
         onPress={() => onChange("recruiter")}
         row={row}
+        compact={compact}
       />
     </View>
   );
@@ -51,6 +56,7 @@ type RoleCheckboxProps = {
   selected: boolean;
   onPress: () => void;
   row?: boolean;
+  compact?: boolean;
 };
 
 function RoleCheckbox({
@@ -59,6 +65,7 @@ function RoleCheckbox({
   selected,
   onPress,
   row = false,
+  compact = false,
 }: RoleCheckboxProps) {
   return (
     <Pressable
@@ -73,7 +80,8 @@ function RoleCheckbox({
           style={[
             styles.card,
             row && styles.cardRow,
-            { borderRadius: glassButtonRadius },
+            compact && styles.cardCompact,
+            { borderRadius: glassAuthRadius },
             selected && styles.cardSelected,
             pressed && styles.cardPressed,
           ]}
@@ -85,7 +93,11 @@ function RoleCheckbox({
           </View>
           <View style={[styles.textWrap, row && styles.textWrapRow]}>
             <Text
-              style={[styles.label, selected && styles.labelSelected]}
+              style={[
+                styles.label,
+                compact && styles.labelCompact,
+                selected && styles.labelSelected,
+              ]}
               numberOfLines={1}
             >
               {label}
@@ -141,10 +153,15 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 12,
   },
+  cardCompact: {
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    gap: 8,
+  },
   box: {
     width: 24,
     height: 24,
-    borderRadius: 5,
+    borderRadius: 3,
     borderWidth: 1.5,
     borderColor: "rgba(255, 255, 255, 0.45)",
     alignItems: "center",
@@ -167,6 +184,9 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: colors.textMuted,
     ...font("500"),
+  },
+  labelCompact: {
+    fontSize: 13,
   },
   labelSelected: {
     color: colors.textPrimary,

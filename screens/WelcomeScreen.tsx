@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, useState } from "react";
 import {
   Animated,
   Easing,
@@ -16,22 +16,30 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { BrandTitle } from "../components/auth/BrandTitle";
 import { FormField } from "../components/auth/FormField";
+import { PhoneField } from "../components/auth/PhoneField";
 import { RoleCheckboxes } from "../components/auth/RoleCheckboxes";
 import { SocialAuthButtons } from "../components/auth/SocialAuthButtons";
 import { StepDots } from "../components/auth/StepDots";
 import { ConstellationBackground } from "../components/background/ConstellationBackground";
 import { GradientBackground } from "../components/background/GradientBackground";
 import { MovingShadowOverlay } from "../components/background/MovingShadowOverlay";
-import { glassButtonRadius } from "../components/ui/GlassSurface";
+import { glassAuthRadius } from "../components/ui/GlassSurface";
 import { registerPresetsByRole } from "../data/registerPresets";
 import {
   EMPTY_REGISTER_FORM,
+  REGISTER_DOTS_PLACEHOLDER,
   REGISTER_STEPS_BY_ROLE,
   type RegisterFieldDef,
   type RegisterFieldKey,
   type RegisterFormState,
   type RegisterStepDef,
 } from "../data/registerStepDefs";
+import {
+  formatPhoneDisplay,
+  getDefaultPhoneCountry,
+  isPhoneCountryCode,
+  type PhoneCountryCode,
+} from "../lib/phoneFormat";
 import type { RootStackParamList, UserRole } from "../navigation/types";
 import { colors, font, Text } from "../theme";
 
@@ -40,21 +48,10 @@ export type WelcomeScreenProps = NativeStackScreenProps<
   "Welcome"
 >;
 
-/** Полоса шагов всегда рисуется на это число точек (потом завязать на роль). */
-const STEP_DOTS_COUNT = 5;
-
 /** Верхняя позиция названия на шагах входа/регистрации. */
 const AUTH_TITLE_TOP = 48;
 
 type Phase = "intent" | "login" | "register";
-
-const LOGIN_EMAIL_FIELD: RegisterFieldDef = {
-  key: "email",
-  labelKey: "auth.email",
-  placeholderKey: "auth.emailPlaceholder",
-  keyboardType: "email-address",
-  autoCapitalize: "none",
-};
 
 const LOGIN_PASSWORD_FIELD: RegisterFieldDef = {
   key: "password",
@@ -64,16 +61,29 @@ const LOGIN_PASSWORD_FIELD: RegisterFieldDef = {
   autoCapitalize: "none",
 };
 
+const OTP_FIELD: RegisterFieldDef = {
+  key: "otpCode",
+  labelKey: "auth.otp",
+  placeholderKey: "auth.otpPlaceholder",
+  keyboardType: "phone-pad",
+  autoCapitalize: "none",
+};
+
 const TITLE_ANIM_MS = 720;
 const CONTENT_FADE_OUT_MS = 200;
 const CONTENT_FADE_IN_MS = 300;
+
+function getPhoneCountry(form: RegisterFormState): PhoneCountryCode {
+  return isPhoneCountryCode(form.phoneCountry)
+    ? form.phoneCountry
+    : getDefaultPhoneCountry();
+}
 
 export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
   const { t } = useTranslation();
   const { height: windowHeight } = useWindowDimensions();
 
   const [phase, setPhase] = useState<Phase>("intent");
-  // Регистрация: stepIndex 0 — выбор роли; 1..N — шаги выбранной роли.
   const [role, setRole] = useState<UserRole | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [form, setForm] = useState<RegisterFormState>(() => ({
@@ -83,11 +93,9 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
 
   const contentOpacity = useRef(new Animated.Value(1)).current;
   const contentShift = useRef(new Animated.Value(0)).current;
-  // 0 — intent (название по центру), 1 — вход/регистрация (название приподнято).
   const logoLift = useRef(new Animated.Value(0)).current;
   const titleScale = useRef(new Animated.Value(1)).current;
 
-  // Сдвиг всей группы (название + контент) вниз на intent, чтобы визуально быть по центру.
   const intentGroupOffset = Math.max(
     0,
     (windowHeight - AUTH_TITLE_TOP - 340) / 2,
@@ -114,7 +122,6 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
       }),
     ]);
 
-  /** Мягкое увеличение названия без резкого setValue. */
   const pulseTitleGrow = () => {
     titleScale.stopAnimation();
     createTitleGrowAnim().start();
@@ -148,17 +155,18 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
   };
 
   const formSteps = role ? REGISTER_STEPS_BY_ROLE[role] : [];
-  // Шаг 0 — объединённый «аккаунт + выбор роли»; шаги 1..N — формы выбранной роли.
   const isAccountStep = stepIndex === 0;
   const currentStep: RegisterStepDef | undefined = isAccountStep
     ? undefined
-    : formSteps[stepIndex];
-  const isLast = !isAccountStep && stepIndex === formSteps.length - 1;
+    : formSteps[stepIndex - 1];
+  const isLast = !isAccountStep && stepIndex === formSteps.length;
+  const stepDotsCount = role
+    ? 1 + formSteps.length
+    : REGISTER_DOTS_PLACEHOLDER;
 
   const setField = (key: RegisterFieldKey, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
-  /** Кросс-фейд содержимого; смену состояния делаем в колбэке. */
   const transition = (
     apply: () => void,
     direction: 1 | -1 = 1,
@@ -222,7 +230,8 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
       setPhase("login");
       setForm((prev) => ({
         ...prev,
-        email: prev.email || preset.email,
+        phone: prev.phone || preset.phone,
+        phoneCountry: prev.phoneCountry || preset.phoneCountry,
         password: prev.password || preset.password,
       }));
     }, 1);
@@ -241,7 +250,8 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
     const preset = registerPresetsByRole[next];
     setForm((prev) => ({
       ...prev,
-      email: prev.email || preset.email,
+      phone: prev.phone || preset.phone,
+      phoneCountry: prev.phoneCountry || preset.phoneCountry,
       password: prev.password || preset.password,
     }));
     setRole(next);
@@ -251,19 +261,16 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
     if (!role) {
       return;
     }
-    const name = role === "finder" ? form.fullName.trim() : form.company.trim();
     const fallback = t(`roles.${role}`);
-    const subtitleParts = [
-      role === "finder" ? form.headline.trim() : form.industry.trim(),
-      form.email.trim(),
-    ].filter(Boolean);
+    const phoneLabel = formatPhoneDisplay(form.phone, getPhoneCountry(form));
+    const subtitleParts =
+      role === "finder"
+        ? [form.aiTools.trim(), form.github.trim(), phoneLabel].filter(Boolean)
+        : [phoneLabel].filter(Boolean);
 
     navigation.replace("Main", {
       role,
-      greetingTitle:
-        role === "finder"
-          ? t("profile.greeting", { name: name || fallback })
-          : name || fallback,
+      greetingTitle: fallback,
       greetingSubtitle: subtitleParts.join(" · ") || fallback,
     });
   };
@@ -272,22 +279,34 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
     navigation.replace("Main", {
       role: "finder",
       greetingTitle: t("profile.greeting", { name: t("roles.finder") }),
-      greetingSubtitle: form.email.trim() || t("roles.finder"),
+      greetingSubtitle:
+        formatPhoneDisplay(form.phone, getPhoneCountry(form)) ||
+        t("roles.finder"),
     });
   };
 
   const goNextRegister = () => {
     if (isAccountStep) {
       if (role) {
-        transition(() => setStepIndex(1), 1, { pulseTitle: true });
+        transition(
+          () => {
+            setStepIndex(1);
+            setForm((prev) => ({
+              ...prev,
+              otpCode: prev.otpCode || "123456",
+            }));
+          },
+          1,
+          { pulseTitle: true },
+        );
       }
       return;
     }
     if (isLast) {
       completeRegister();
-    } else {
-      transition(() => setStepIndex(stepIndex + 1), 1, { pulseTitle: true });
+      return;
     }
+    transition(() => setStepIndex(stepIndex + 1), 1, { pulseTitle: true });
   };
 
   const goBack = () => {
@@ -307,6 +326,7 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
   const showDots = phase === "register";
   const ctaDisabled = phase === "register" && isAccountStep && !role;
   const registerCtaLabel = isLast ? t("auth.finish") : t("auth.next");
+  const formattedPhone = formatPhoneDisplay(form.phone, getPhoneCountry(form));
 
   return (
     <View style={styles.root}>
@@ -349,7 +369,7 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
 
                   {showDots ? (
                     <View style={styles.dotsWrap}>
-                      <StepDots count={STEP_DOTS_COUNT} current={stepIndex} />
+                      <StepDots count={stepDotsCount} current={stepIndex} />
                     </View>
                   ) : null}
                 </Animated.View>
@@ -365,24 +385,33 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
                   ]}
                 >
                   {phase === "intent" ? (
-                    <View style={styles.intentRow}>
-                      <GlassButton
-                        title={t("welcome.login")}
-                        onPress={goToLogin}
-                        style={styles.intentButton}
-                      />
+                    <View style={styles.intentColumn}>
                       <GlassButton
                         title={t("welcome.register")}
                         onPress={goToRegister}
-                        style={styles.intentButton}
+                        style={styles.intentPrimaryButton}
                       />
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={t("welcome.login")}
+                        onPress={goToLogin}
+                        style={styles.intentLoginLink}
+                      >
+                        <Text style={styles.intentLoginText}>
+                          {t("welcome.login")}
+                        </Text>
+                      </Pressable>
                     </View>
                   ) : phase === "login" ? (
                     <LoginContent
-                      email={form.email}
+                      phone={form.phone}
+                      phoneCountry={getPhoneCountry(form)}
                       password={form.password}
                       focused={focused}
                       onChange={setField}
+                      onChangeCountry={(country) =>
+                        setField("phoneCountry", country)
+                      }
                       onFocus={setFocused}
                       onBlur={() => setFocused(null)}
                       onSubmit={completeLogin}
@@ -391,12 +420,15 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
                   ) : isAccountStep ? (
                     <>
                       <View style={styles.form}>
-                        <FormField
-                          field={LOGIN_EMAIL_FIELD}
-                          value={form.email}
-                          focused={focused === "email"}
-                          onChangeText={(text) => setField("email", text)}
-                          onFocus={() => setFocused("email")}
+                        <PhoneField
+                          value={form.phone}
+                          country={getPhoneCountry(form)}
+                          focused={focused === "phone"}
+                          onChangeText={(text) => setField("phone", text)}
+                          onChangeCountry={(country) =>
+                            setField("phoneCountry", country)
+                          }
+                          onFocus={() => setFocused("phone")}
                           onBlur={() => setFocused(null)}
                         />
                         <FormField
@@ -411,6 +443,7 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
                           role={role}
                           onChange={chooseRole}
                           layout="row"
+                          compact
                         />
                       </View>
 
@@ -426,6 +459,63 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
                           onBack={goBack}
                           onPress={completeRegister}
                         />
+                      </View>
+                    </>
+                  ) : currentStep?.kind === "verify" ? (
+                    <>
+                      <Text style={styles.heading}>
+                        {t(currentStep.titleKey)}
+                      </Text>
+                      <Text style={styles.helper}>
+                        {t(currentStep.hintKey ?? "auth.verifyPhoneHint", {
+                          phone: formattedPhone,
+                        })}
+                      </Text>
+
+                      <View style={styles.form}>
+                        <PhoneField
+                          value={form.phone}
+                          country={getPhoneCountry(form)}
+                          focused={false}
+                          readOnly
+                          onChangeText={() => {}}
+                          onChangeCountry={() => {}}
+                          onFocus={() => {}}
+                          onBlur={() => {}}
+                        />
+                        <FormField
+                          field={OTP_FIELD}
+                          value={form.otpCode}
+                          focused={focused === "otpCode"}
+                          onChangeText={(text) =>
+                            setField(
+                              "otpCode",
+                              text.replace(/\D/g, "").slice(0, 6),
+                            )
+                          }
+                          onFocus={() => setFocused("otpCode")}
+                          onBlur={() => setFocused(null)}
+                        />
+                      </View>
+
+                      <GlassButton
+                        title={registerCtaLabel}
+                        onPress={goNextRegister}
+                        style={styles.cta}
+                      />
+
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={goNextRegister}
+                        style={styles.subtleLink}
+                      >
+                        <Text style={styles.subtleLinkText}>
+                          {t("auth.skip")}
+                        </Text>
+                      </Pressable>
+
+                      <View style={styles.socialBlock}>
+                        <SocialAuthButtons onBack={goBack} />
                       </View>
                     </>
                   ) : currentStep ? (
@@ -460,12 +550,7 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
                       />
 
                       <View style={styles.socialBlock}>
-                        <SocialAuthButtons
-                          onBack={goBack}
-                          onPress={
-                            currentStep.social ? completeRegister : undefined
-                          }
-                        />
+                        <SocialAuthButtons onBack={goBack} />
                       </View>
 
                       {currentStep.skippable ? (
@@ -492,10 +577,12 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
 }
 
 type LoginContentProps = {
-  email: string;
+  phone: string;
+  phoneCountry: PhoneCountryCode;
   password: string;
   focused: RegisterFieldKey | null;
   onChange: (key: RegisterFieldKey, value: string) => void;
+  onChangeCountry: (country: PhoneCountryCode) => void;
   onFocus: (key: RegisterFieldKey) => void;
   onBlur: () => void;
   onSubmit: () => void;
@@ -503,10 +590,12 @@ type LoginContentProps = {
 };
 
 function LoginContent({
-  email,
+  phone,
+  phoneCountry,
   password,
   focused,
   onChange,
+  onChangeCountry,
   onFocus,
   onBlur,
   onSubmit,
@@ -517,12 +606,13 @@ function LoginContent({
   return (
     <>
       <View style={styles.form}>
-        <FormField
-          field={LOGIN_EMAIL_FIELD}
-          value={email}
-          focused={focused === "email"}
-          onChangeText={(text) => onChange("email", text)}
-          onFocus={() => onFocus("email")}
+        <PhoneField
+          value={phone}
+          country={phoneCountry}
+          focused={focused === "phone"}
+          onChangeText={(text) => onChange("phone", text)}
+          onChangeCountry={onChangeCountry}
+          onFocus={() => onFocus("phone")}
           onBlur={onBlur}
         />
         <FormField
@@ -552,6 +642,7 @@ type GlassButtonProps = {
   title: string;
   onPress: () => void;
   disabled?: boolean;
+  radius?: number;
   style?: object;
 };
 
@@ -559,6 +650,7 @@ function GlassButton({
   title,
   onPress,
   disabled = false,
+  radius = glassAuthRadius,
   style,
 }: GlassButtonProps) {
   return (
@@ -573,7 +665,7 @@ function GlassButton({
         <View
           style={[
             styles.buttonSurface,
-            { borderRadius: glassButtonRadius },
+            { borderRadius: radius },
             pressed && styles.buttonPressed,
             disabled && styles.buttonDisabled,
           ]}
@@ -633,15 +725,28 @@ const styles = StyleSheet.create({
   contentIntent: {
     marginTop: -8,
   },
-  intentRow: {
-    flexDirection: "row",
-    gap: 14,
+  intentColumn: {
+    alignItems: "center",
     alignSelf: "stretch",
-    justifyContent: "center",
   },
-  intentButton: {
-    flex: 1,
-    alignSelf: "stretch",
+  intentPrimaryButton: {
+    alignSelf: "center",
+    minWidth: 220,
+    maxWidth: 280,
+  },
+  intentLoginLink: {
+    marginTop: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  intentLoginText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: colors.textPrimary,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(255, 255, 255, 0.55)",
+    paddingBottom: 1,
+    ...font("500"),
   },
   heading: {
     fontSize: 26,

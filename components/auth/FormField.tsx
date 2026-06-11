@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import type { RegisterFieldDef } from "../../data/registerStepDefs";
 import { colors, font, Text, TextInput } from "../../theme";
-import { glassInputRadius } from "../ui/GlassSurface";
+import { glassAuthRadius } from "../ui/GlassSurface";
 
 type FormFieldProps = {
   field: RegisterFieldDef;
@@ -32,7 +32,7 @@ export function FormField({
       <View
         style={[
           styles.inputWrap,
-          { borderRadius: glassInputRadius },
+          { borderRadius: glassAuthRadius },
           focused && styles.inputWrapFocused,
         ]}
       >

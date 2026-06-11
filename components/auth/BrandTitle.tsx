@@ -10,15 +10,15 @@ import { font } from '../../theme';
  * повторяется.
  */
 
-type Letter = { ch: string; weight: '300' | '500' | '600' | '700' };
+type Letter = { ch: string; weight: '600' | '700' | '800' | '900' };
 
 const LETTERS: Letter[] = [
-  { ch: 'F', weight: '700' },
-  { ch: 'i', weight: '500' },
-  { ch: 'n', weight: '500' },
-  { ch: 'd', weight: '500' },
-  { ch: 'I', weight: '700' },
-  { ch: 'T', weight: '700' },
+  { ch: 'F', weight: '900' },
+  { ch: 'i', weight: '700' },
+  { ch: 'n', weight: '700' },
+  { ch: 'd', weight: '700' },
+  { ch: 'I', weight: '900' },
+  { ch: 'T', weight: '900' },
 ];
 
 const N = LETTERS.length;
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   letter: {
-    letterSpacing: -1,
+    letterSpacing: -1.6,
     includeFontPadding: false,
     overflow: 'visible',
     // Свечение (textShadowRadius) на Android обрезается по рамке самого Text —
