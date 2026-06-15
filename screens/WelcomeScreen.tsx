@@ -1,6 +1,7 @@
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Alert,
   Easing,
   KeyboardAvoidingView,
   Platform,
@@ -15,7 +16,9 @@ import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { BrandTitle } from "../components/auth/BrandTitle";
+import { AiToolsPicker } from "../components/auth/AiToolsPicker";
 import { FormField } from "../components/auth/FormField";
+import { OtpInput } from "../components/auth/OtpInput";
 import { PhoneField } from "../components/auth/PhoneField";
 import { RoleCheckboxes } from "../components/auth/RoleCheckboxes";
 import { SocialAuthButtons } from "../components/auth/SocialAuthButtons";
@@ -25,6 +28,7 @@ import { GradientBackground } from "../components/background/GradientBackground"
 import { MovingShadowOverlay } from "../components/background/MovingShadowOverlay";
 import { glassAuthRadius } from "../components/ui/GlassSurface";
 import { registerPresetsByRole } from "../data/registerPresets";
+import { formatSelectedAiTools } from "../data/aiToolsCatalog";
 import {
   EMPTY_REGISTER_FORM,
   REGISTER_DOTS_PLACEHOLDER,
@@ -35,11 +39,15 @@ import {
   type RegisterStepDef,
 } from "../data/registerStepDefs";
 import {
+  detectPhoneCountry,
   formatPhoneDisplay,
   getDefaultPhoneCountry,
   isPhoneCountryCode,
+  toE164,
   type PhoneCountryCode,
 } from "../lib/phoneFormat";
+import { RegisterAuthError, sendPhoneOtp } from "../lib/registerAuth";
+import { useSplashDone } from "../contexts/SplashContext";
 import type { RootStackParamList, UserRole } from "../navigation/types";
 import { colors, font, Text } from "../theme";
 
@@ -61,26 +69,32 @@ const LOGIN_PASSWORD_FIELD: RegisterFieldDef = {
   autoCapitalize: "none",
 };
 
-const OTP_FIELD: RegisterFieldDef = {
-  key: "otpCode",
-  labelKey: "auth.otp",
-  placeholderKey: "auth.otpPlaceholder",
-  keyboardType: "phone-pad",
-  autoCapitalize: "none",
-};
-
 const TITLE_ANIM_MS = 720;
 const CONTENT_FADE_OUT_MS = 200;
 const CONTENT_FADE_IN_MS = 300;
+const INTENT_ENTER_SHIFT = 12;
 
 function getPhoneCountry(form: RegisterFormState): PhoneCountryCode {
-  return isPhoneCountryCode(form.phoneCountry)
-    ? form.phoneCountry
-    : getDefaultPhoneCountry();
+  return (
+    detectPhoneCountry(form.phone) ??
+    (isPhoneCountryCode(form.phoneCountry)
+      ? form.phoneCountry
+      : getDefaultPhoneCountry())
+  );
+}
+
+function syncPhoneCountry(
+  setField: (key: RegisterFieldKey, value: string) => void,
+  country: PhoneCountryCode | null,
+) {
+  if (country) {
+    setField("phoneCountry", country);
+  }
 }
 
 export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
   const { t } = useTranslation();
+  const splashDone = useSplashDone();
   const { height: windowHeight } = useWindowDimensions();
 
   const [phase, setPhase] = useState<Phase>("intent");
@@ -90,11 +104,64 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
     ...EMPTY_REGISTER_FORM,
   }));
   const [focused, setFocused] = useState<RegisterFieldKey | null>(null);
+  const [resendingCode, setResendingCode] = useState(false);
 
   const contentOpacity = useRef(new Animated.Value(1)).current;
   const contentShift = useRef(new Animated.Value(0)).current;
   const logoLift = useRef(new Animated.Value(0)).current;
   const titleScale = useRef(new Animated.Value(1)).current;
+  const intentTitleOpacity = useRef(new Animated.Value(0)).current;
+  const intentTitleShift = useRef(new Animated.Value(-INTENT_ENTER_SHIFT)).current;
+  const intentButtonsOpacity = useRef(new Animated.Value(0)).current;
+  const intentButtonsShift = useRef(new Animated.Value(INTENT_ENTER_SHIFT)).current;
+  const intentEnterPlayed = useRef(false);
+
+  const runIntentEnterAnim = useCallback(() => {
+    intentTitleOpacity.setValue(0);
+    intentTitleShift.setValue(-INTENT_ENTER_SHIFT);
+    intentButtonsOpacity.setValue(0);
+    intentButtonsShift.setValue(INTENT_ENTER_SHIFT);
+
+    Animated.parallel([
+      Animated.timing(intentTitleOpacity, {
+        toValue: 1,
+        duration: CONTENT_FADE_IN_MS,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(intentTitleShift, {
+        toValue: 0,
+        duration: CONTENT_FADE_IN_MS,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(intentButtonsOpacity, {
+        toValue: 1,
+        duration: CONTENT_FADE_IN_MS,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(intentButtonsShift, {
+        toValue: 0,
+        duration: CONTENT_FADE_IN_MS,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [
+    intentButtonsOpacity,
+    intentButtonsShift,
+    intentTitleOpacity,
+    intentTitleShift,
+  ]);
+
+  useEffect(() => {
+    if (!splashDone || intentEnterPlayed.current) {
+      return;
+    }
+    intentEnterPlayed.current = true;
+    runIntentEnterAnim();
+  }, [splashDone, runIntentEnterAnim]);
 
   const intentGroupOffset = Math.max(
     0,
@@ -263,9 +330,15 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
     }
     const fallback = t(`roles.${role}`);
     const phoneLabel = formatPhoneDisplay(form.phone, getPhoneCountry(form));
+    const selectedToolsLabel = formatSelectedAiTools(form.selectedAiTools, t);
     const subtitleParts =
       role === "finder"
-        ? [form.aiTools.trim(), form.github.trim(), phoneLabel].filter(Boolean)
+        ? [
+            selectedToolsLabel,
+            form.aiTools.trim(),
+            form.github.trim(),
+            phoneLabel,
+          ].filter(Boolean)
         : [phoneLabel].filter(Boolean);
 
     navigation.replace("Main", {
@@ -328,6 +401,32 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
   const registerCtaLabel = isLast ? t("auth.finish") : t("auth.next");
   const formattedPhone = formatPhoneDisplay(form.phone, getPhoneCountry(form));
 
+  const handleResendCode = useCallback(async () => {
+    const e164 = toE164(form.phone, getPhoneCountry(form));
+    if (!e164) {
+      Alert.alert(t("auth.invalidPhone"));
+      return;
+    }
+
+    setResendingCode(true);
+    try {
+      await sendPhoneOtp(e164);
+    } catch (error) {
+      if (error instanceof RegisterAuthError) {
+        Alert.alert(
+          t("common.appName"),
+          error.code === "supabaseNotConfigured"
+            ? t("auth.supabaseNotConfigured")
+            : t("auth.authFailed"),
+        );
+      } else {
+        Alert.alert(t("common.appName"), t("auth.authFailed"));
+      }
+    } finally {
+      setResendingCode(false);
+    }
+  }, [form.phone, form.phoneCountry, t]);
+
   return (
     <View style={styles.root}>
       <GradientBackground />
@@ -361,7 +460,11 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
                     showDots && styles.titleBlockWithDots,
                     styles.titleBlockAuth,
                     {
-                      transform: [{ scale: titleScale }],
+                      opacity: intentTitleOpacity,
+                      transform: [
+                        { scale: titleScale },
+                        { translateY: intentTitleShift },
+                      ],
                     },
                   ]}
                 >
@@ -385,11 +488,20 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
                   ]}
                 >
                   {phase === "intent" ? (
-                    <View style={styles.intentColumn}>
+                    <Animated.View
+                      style={[
+                        styles.intentColumn,
+                        {
+                          opacity: intentButtonsOpacity,
+                          transform: [{ translateY: intentButtonsShift }],
+                        },
+                      ]}
+                    >
                       <GlassButton
                         title={t("welcome.register")}
                         onPress={goToRegister}
                         style={styles.intentPrimaryButton}
+                        textStyle={styles.intentButtonText}
                       />
                       <Pressable
                         accessibilityRole="button"
@@ -401,17 +513,13 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
                           {t("welcome.login")}
                         </Text>
                       </Pressable>
-                    </View>
+                    </Animated.View>
                   ) : phase === "login" ? (
                     <LoginContent
                       phone={form.phone}
-                      phoneCountry={getPhoneCountry(form)}
                       password={form.password}
                       focused={focused}
                       onChange={setField}
-                      onChangeCountry={(country) =>
-                        setField("phoneCountry", country)
-                      }
                       onFocus={setFocused}
                       onBlur={() => setFocused(null)}
                       onSubmit={completeLogin}
@@ -422,11 +530,10 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
                       <View style={styles.form}>
                         <PhoneField
                           value={form.phone}
-                          country={getPhoneCountry(form)}
                           focused={focused === "phone"}
                           onChangeText={(text) => setField("phone", text)}
-                          onChangeCountry={(country) =>
-                            setField("phoneCountry", country)
+                          onCountryDetected={(country) =>
+                            syncPhoneCountry(setField, country)
                           }
                           onFocus={() => setFocused("phone")}
                           onBlur={() => setFocused(null)}
@@ -463,37 +570,81 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
                     </>
                   ) : currentStep?.kind === "verify" ? (
                     <>
-                      <Text style={styles.heading}>
-                        {t(currentStep.titleKey)}
-                      </Text>
-                      <Text style={styles.helper}>
+                      <Text style={[styles.helper, styles.verifyHint]}>
                         {t(currentStep.hintKey ?? "auth.verifyPhoneHint", {
                           phone: formattedPhone,
                         })}
                       </Text>
 
-                      <View style={styles.form}>
-                        <PhoneField
-                          value={form.phone}
-                          country={getPhoneCountry(form)}
-                          focused={false}
-                          readOnly
-                          onChangeText={() => {}}
-                          onChangeCountry={() => {}}
-                          onFocus={() => {}}
-                          onBlur={() => {}}
-                        />
-                        <FormField
-                          field={OTP_FIELD}
+                      <View style={styles.verifyForm}>
+                        <OtpInput
                           value={form.otpCode}
                           focused={focused === "otpCode"}
-                          onChangeText={(text) =>
-                            setField(
-                              "otpCode",
-                              text.replace(/\D/g, "").slice(0, 6),
-                            )
-                          }
+                          onChangeText={(text) => setField("otpCode", text)}
                           onFocus={() => setFocused("otpCode")}
+                          onBlur={() => setFocused(null)}
+                        />
+                      </View>
+
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={t("auth.resendCode")}
+                        accessibilityState={{ disabled: resendingCode }}
+                        disabled={resendingCode}
+                        onPress={handleResendCode}
+                        style={styles.resendLink}
+                      >
+                        <Text
+                          style={[
+                            styles.resendLinkText,
+                            resendingCode && styles.resendLinkTextDisabled,
+                          ]}
+                        >
+                          {t("auth.resendCode")}
+                        </Text>
+                      </Pressable>
+
+                      <GlassButton
+                        title={registerCtaLabel}
+                        onPress={goNextRegister}
+                        style={styles.cta}
+                      />
+
+                      <View style={styles.socialBlock}>
+                        <SocialAuthButtons onBack={goBack} />
+                      </View>
+                    </>
+                  ) : currentStep?.kind === "highlights" ? (
+                    <>
+                      <Text style={styles.heading}>
+                        {t(currentStep.titleKey)}
+                      </Text>
+                      {currentStep.hintKey && t(currentStep.hintKey) ? (
+                        <Text style={styles.helper}>
+                          {t(currentStep.hintKey)}
+                        </Text>
+                      ) : null}
+
+                      <View style={styles.form}>
+                        <AiToolsPicker
+                          value={form.selectedAiTools}
+                          onChange={(value) => setField("selectedAiTools", value)}
+                        />
+                        <FormField
+                          field={currentStep.fields[0]}
+                          value={form.aiTools}
+                          focused={focused === "aiTools"}
+                          hidePlaceholder
+                          onChangeText={(text) => setField("aiTools", text)}
+                          onFocus={() => setFocused("aiTools")}
+                          onBlur={() => setFocused(null)}
+                        />
+                        <FormField
+                          field={currentStep.fields[1]}
+                          value={form.github}
+                          focused={focused === "github"}
+                          onChangeText={(text) => setField("github", text)}
+                          onFocus={() => setFocused("github")}
                           onBlur={() => setFocused(null)}
                         />
                       </View>
@@ -503,16 +654,6 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
                         onPress={goNextRegister}
                         style={styles.cta}
                       />
-
-                      <Pressable
-                        accessibilityRole="button"
-                        onPress={goNextRegister}
-                        style={styles.subtleLink}
-                      >
-                        <Text style={styles.subtleLinkText}>
-                          {t("auth.skip")}
-                        </Text>
-                      </Pressable>
 
                       <View style={styles.socialBlock}>
                         <SocialAuthButtons onBack={goBack} />
@@ -578,11 +719,9 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
 
 type LoginContentProps = {
   phone: string;
-  phoneCountry: PhoneCountryCode;
   password: string;
   focused: RegisterFieldKey | null;
   onChange: (key: RegisterFieldKey, value: string) => void;
-  onChangeCountry: (country: PhoneCountryCode) => void;
   onFocus: (key: RegisterFieldKey) => void;
   onBlur: () => void;
   onSubmit: () => void;
@@ -591,11 +730,9 @@ type LoginContentProps = {
 
 function LoginContent({
   phone,
-  phoneCountry,
   password,
   focused,
   onChange,
-  onChangeCountry,
   onFocus,
   onBlur,
   onSubmit,
@@ -608,10 +745,13 @@ function LoginContent({
       <View style={styles.form}>
         <PhoneField
           value={phone}
-          country={phoneCountry}
           focused={focused === "phone"}
           onChangeText={(text) => onChange("phone", text)}
-          onChangeCountry={onChangeCountry}
+          onCountryDetected={(country) => {
+            if (country) {
+              onChange("phoneCountry", country);
+            }
+          }}
           onFocus={() => onFocus("phone")}
           onBlur={onBlur}
         />
@@ -644,6 +784,7 @@ type GlassButtonProps = {
   disabled?: boolean;
   radius?: number;
   style?: object;
+  textStyle?: object;
 };
 
 function GlassButton({
@@ -652,6 +793,7 @@ function GlassButton({
   disabled = false,
   radius = glassAuthRadius,
   style,
+  textStyle,
 }: GlassButtonProps) {
   return (
     <Pressable
@@ -670,7 +812,7 @@ function GlassButton({
             disabled && styles.buttonDisabled,
           ]}
         >
-          <Text style={styles.buttonText}>{title}</Text>
+          <Text style={[styles.buttonText, textStyle]}>{title}</Text>
         </View>
       )}
     </Pressable>
@@ -739,14 +881,16 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
   },
+  intentButtonText: {
+    ...font("600"),
+  },
   intentLoginText: {
     fontSize: 14,
-    fontWeight: "500",
     color: colors.textPrimary,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "rgba(255, 255, 255, 0.55)",
     paddingBottom: 1,
-    ...font("500"),
+    ...font("600"),
   },
   heading: {
     fontSize: 26,
@@ -764,6 +908,32 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     maxWidth: 340,
     ...font("400"),
+  },
+  verifyHint: {
+    textAlign: "center",
+    alignSelf: "center",
+    marginBottom: 28,
+  },
+  verifyForm: {
+    alignSelf: "stretch",
+  },
+  resendLink: {
+    marginTop: 16,
+    alignSelf: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  resendLinkText: {
+    fontSize: 15,
+    color: colors.textPrimary,
+    fontWeight: "400",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(255, 255, 255, 0.55)",
+    paddingBottom: 1,
+    ...font("400"),
+  },
+  resendLinkTextDisabled: {
+    opacity: 0.45,
   },
   roleWrap: {
     marginTop: 8,

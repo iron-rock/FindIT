@@ -36,7 +36,49 @@ export function getDefaultPhoneCountry(): PhoneCountryCode {
   return 'RU';
 }
 
-/** Форматирует ввод по мере набора (скобки, пробелы). */
+/** Emoji-флаг по ISO-коду страны (RU → 🇷🇺). */
+export function countryCodeToFlag(code: PhoneCountryCode): string {
+  return code
+    .toUpperCase()
+    .replace(/./g, (char) => String.fromCodePoint(127397 + char.charCodeAt(0)));
+}
+
+/** Форматирует полный международный номер по мере набора (+7 912 …). */
+export function formatInternationalPhoneInput(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return '';
+  }
+  if (trimmed === '+') {
+    return '+';
+  }
+
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) {
+    return trimmed.includes('+') ? '+' : '';
+  }
+
+  return new AsYouType().input(`+${digits}`);
+}
+
+/** Определяет страну по префиксу (+77… → KZ, +79… → RU и т.д.). */
+export function detectPhoneCountry(display: string): PhoneCountryCode | null {
+  const digits = display.replace(/\D/g, '');
+  if (digits.length < 2) {
+    return null;
+  }
+
+  const formatter = new AsYouType();
+  formatter.input(`+${digits}`);
+  const fromFormatter = formatter.getCountry();
+  if (fromFormatter) {
+    return fromFormatter;
+  }
+
+  return parsePhoneNumberFromString(`+${digits}`)?.country ?? null;
+}
+
+/** @deprecated Используйте formatInternationalPhoneInput для свободного ввода. */
 export function formatPhoneInput(raw: string, country: PhoneCountryCode): string {
   const digits = raw.replace(/\D/g, '');
   if (!digits) {
@@ -45,25 +87,49 @@ export function formatPhoneInput(raw: string, country: PhoneCountryCode): string
   return new AsYouType(country).input(digits);
 }
 
+function parseInternational(display: string, fallbackCountry?: PhoneCountryCode) {
+  const digits = display.replace(/\D/g, '');
+  if (!digits) {
+    return undefined;
+  }
+
+  const international = parsePhoneNumberFromString(`+${digits}`);
+  if (international) {
+    return international;
+  }
+
+  if (fallbackCountry) {
+    return parsePhoneNumberFromString(display, fallbackCountry);
+  }
+
+  return undefined;
+}
+
 /** E.164 для Supabase Auth. */
-export function toE164(display: string, country: PhoneCountryCode): string | null {
-  const parsed = parsePhoneNumberFromString(display, country);
+export function toE164(display: string, country?: PhoneCountryCode): string | null {
+  const parsed = parseInternational(display, country);
   if (!parsed?.isValid()) {
     return null;
   }
   return parsed.format('E.164');
 }
 
-export function isValidPhone(display: string, country: PhoneCountryCode): boolean {
+export function isValidPhone(display: string, country?: PhoneCountryCode): boolean {
   if (!display.trim()) {
     return false;
   }
-  return isValidPhoneNumber(display, country);
+
+  const parsed = parseInternational(display, country);
+  if (parsed) {
+    return parsed.isValid();
+  }
+
+  return country ? isValidPhoneNumber(display, country) : false;
 }
 
 /** Человекочитаемый формат для подсказки на шаге OTP. */
-export function formatPhoneDisplay(display: string, country: PhoneCountryCode): string {
-  const parsed = parsePhoneNumberFromString(display, country);
+export function formatPhoneDisplay(display: string, country?: PhoneCountryCode): string {
+  const parsed = parseInternational(display, country);
   if (parsed?.isValid()) {
     return parsed.formatInternational();
   }

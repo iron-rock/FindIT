@@ -1,15 +1,16 @@
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { DevPanel } from './components/dev/DevPanel';
 import { SplashVideo } from './components/SplashVideo';
+import { SplashProvider } from './contexts/SplashContext';
 import { SupabaseAuthProvider } from './contexts/SupabaseAuthContext';
 import { initI18n } from './lib/i18n';
 import { RootNavigator } from './navigation/RootNavigator';
-import { colors, outfitFontMap } from './theme';
+import { appFontMap, colors } from './theme';
 
 /*
  * ─── Supabase: прошлый корневой экран + сессия (раскомментировать при интеграции с навигацией) ───
@@ -96,26 +97,31 @@ import { colors, outfitFontMap } from './theme';
 export default function App() {
   const [splashDone, setSplashDone] = useState(false);
   const [i18nReady, setI18nReady] = useState(false);
-  const [fontsLoaded, fontError] = useFonts(outfitFontMap);
+  const [fontsLoaded, fontError] = useFonts(appFontMap);
 
   useEffect(() => {
     initI18n().finally(() => setI18nReady(true));
   }, []);
 
   const ready = (fontsLoaded || !!fontError) && i18nReady;
+  const handleSplashFinish = useCallback(() => setSplashDone(true), []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
-      <SafeAreaProvider>
-        {ready ? (
-          <SupabaseAuthProvider>
-            <RootNavigator />
-            <DevPanel />
-          </SupabaseAuthProvider>
-        ) : null}
-        {!splashDone ? <SplashVideo onFinish={() => setSplashDone(true)} /> : null}
-        <StatusBar style="light" />
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <SafeAreaProvider style={{ flex: 1 }}>
+      <SupabaseAuthProvider>
+        <GestureHandlerRootView
+          style={{ flex: 1, backgroundColor: colors.background }}
+        >
+          {ready ? (
+            <SplashProvider splashDone={splashDone}>
+              <RootNavigator />
+            </SplashProvider>
+          ) : null}
+          {!splashDone ? <SplashVideo onFinish={handleSplashFinish} /> : null}
+        </GestureHandlerRootView>
+        {ready ? <DevPanel /> : null}
+      </SupabaseAuthProvider>
+      <StatusBar style="light" />
+    </SafeAreaProvider>
   );
 }

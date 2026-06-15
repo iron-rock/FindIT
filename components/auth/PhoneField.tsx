@@ -1,56 +1,42 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useMemo, useState } from "react";
-import {
-  FlatList,
-  Modal,
-  Platform,
-  Pressable,
-  StyleSheet,
-  View,
-} from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import {
-  formatPhoneInput,
-  getDefaultPhoneCountry,
-  getPhoneCountryOptions,
+  countryCodeToFlag,
+  detectPhoneCountry,
+  formatInternationalPhoneInput,
   type PhoneCountryCode,
-  type PhoneCountryOption,
 } from "../../lib/phoneFormat";
 import { colors, font, Text, TextInput } from "../../theme";
-import { GlassSurface, glassAuthRadius } from "../ui/GlassSurface";
+import { glassAuthRadius } from "../ui/GlassSurface";
 
 type PhoneFieldProps = {
   value: string;
-  country: PhoneCountryCode;
   focused: boolean;
   readOnly?: boolean;
   onChangeText: (text: string) => void;
-  onChangeCountry: (country: PhoneCountryCode) => void;
+  onCountryDetected?: (country: PhoneCountryCode | null) => void;
   onFocus: () => void;
   onBlur: () => void;
 };
 
-/** Поле телефона с выбором кода страны и автоформатированием. */
+/** Поле телефона со свободным международным вводом и автоопределением страны. */
 export function PhoneField({
   value,
-  country,
   focused,
   readOnly = false,
   onChangeText,
-  onChangeCountry,
+  onCountryDetected,
   onFocus,
   onBlur,
 }: PhoneFieldProps) {
   const { t } = useTranslation();
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const options = useMemo(() => getPhoneCountryOptions(), []);
-  const selected =
-    options.find((o) => o.code === country) ??
-    options.find((o) => o.code === getDefaultPhoneCountry());
+  const detectedCountry = detectPhoneCountry(value);
 
   const handleChangeText = (raw: string) => {
-    onChangeText(formatPhoneInput(raw, country));
+    const formatted = formatInternationalPhoneInput(raw);
+    onChangeText(formatted);
+    onCountryDetected?.(detectPhoneCountry(formatted));
   };
 
   return (
@@ -63,20 +49,18 @@ export function PhoneField({
           focused && styles.inputRowFocused,
         ]}
       >
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t("auth.phoneCountryA11y")}
-          disabled={readOnly}
-          onPress={() => setPickerOpen(true)}
-          style={[styles.countryButton, readOnly && styles.readOnlyPart]}
+        <View
+          accessibilityLabel={
+            detectedCountry
+              ? t("auth.phoneFlagA11y", { country: detectedCountry })
+              : t("auth.phone")
+          }
+          style={[styles.flagSlot, readOnly && styles.readOnlyPart]}
         >
-          <Text style={styles.dialCode}>{selected?.dialCode ?? "+7"}</Text>
-          <Ionicons
-            name="chevron-down"
-            size={14}
-            color={colors.textMuted}
-          />
-        </Pressable>
+          <Text style={styles.flag}>
+            {detectedCountry ? countryCodeToFlag(detectedCountry) : "🌍"}
+          </Text>
+        </View>
 
         <View style={styles.divider} />
 
@@ -93,78 +77,7 @@ export function PhoneField({
           style={[styles.input, readOnly && styles.readOnlyInput]}
         />
       </View>
-
-      <CountryPickerModal
-        visible={pickerOpen}
-        options={options}
-        selected={country}
-        onClose={() => setPickerOpen(false)}
-        onSelect={(code) => {
-          onChangeCountry(code);
-          setPickerOpen(false);
-        }}
-      />
     </View>
-  );
-}
-
-type CountryPickerModalProps = {
-  visible: boolean;
-  options: PhoneCountryOption[];
-  selected: PhoneCountryCode;
-  onClose: () => void;
-  onSelect: (code: PhoneCountryCode) => void;
-};
-
-function CountryPickerModal({
-  visible,
-  options,
-  selected,
-  onClose,
-  onSelect,
-}: CountryPickerModalProps) {
-  const { t } = useTranslation();
-
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <Pressable style={styles.modalBackdrop} onPress={onClose}>
-        <Pressable style={styles.modalSheetWrap} onPress={() => {}}>
-          <GlassSurface radius={glassAuthRadius} style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>{t("auth.phoneCountryTitle")}</Text>
-            <FlatList
-              data={options}
-              keyExtractor={(item) => item.code}
-              keyboardShouldPersistTaps="handled"
-              style={styles.modalList}
-              renderItem={({ item }) => {
-                const active = item.code === selected;
-                return (
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={() => onSelect(item.code)}
-                    style={[styles.modalRow, active && styles.modalRowActive]}
-                  >
-                    <Text
-                      style={[
-                        styles.modalRowText,
-                        active && styles.modalRowTextActive,
-                      ]}
-                    >
-                      {item.label}
-                    </Text>
-                  </Pressable>
-                );
-              }}
-            />
-          </GlassSurface>
-        </Pressable>
-      </Pressable>
-    </Modal>
   );
 }
 
@@ -192,18 +105,15 @@ const styles = StyleSheet.create({
     borderColor: colors.accentBright,
     borderWidth: 1.5,
   },
-  countryButton: {
-    flexDirection: "row",
+  flagSlot: {
+    width: 52,
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 12,
+    justifyContent: "center",
     paddingVertical: Platform.OS === "ios" ? 12 : 10,
   },
-  dialCode: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: colors.textPrimary,
-    ...font("500"),
+  flag: {
+    fontSize: 22,
+    lineHeight: 26,
   },
   divider: {
     width: 1,
@@ -225,49 +135,5 @@ const styles = StyleSheet.create({
   },
   readOnlyInput: {
     color: colors.textMuted,
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(5, 22, 48, 0.28)",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-  },
-  modalSheetWrap: {
-    maxHeight: "60%",
-    alignSelf: "stretch",
-  },
-  modalSheet: {
-    maxHeight: "100%",
-    overflow: "hidden",
-  },
-  modalTitle: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: colors.textPrimary,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255, 255, 255, 0.18)",
-    ...font("500"),
-  },
-  modalList: {
-    flexGrow: 0,
-  },
-  modalRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  modalRowActive: {
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-  },
-  modalRowText: {
-    fontSize: 15,
-    color: colors.textMuted,
-    ...font("400"),
-  },
-  modalRowTextActive: {
-    color: colors.textPrimary,
-    fontWeight: "500",
-    ...font("500"),
   },
 });

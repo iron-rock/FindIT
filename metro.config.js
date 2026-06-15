@@ -8,7 +8,7 @@ const defaultResolveRequest = config.resolver?.resolveRequest;
 
 config.resolver = {
   ...config.resolver,
-  assetExts: [...(config.resolver?.assetExts ?? []), 'webm'],
+  assetExts: [...(config.resolver?.assetExts ?? []), 'webm', 'svg', 'webp'],
   resolveRequest: (context, moduleName, platform) => {
     // i18next@26 exports указывают на dist/esm, которого Metro не находит — берём CJS.
     if (moduleName === 'i18next') {

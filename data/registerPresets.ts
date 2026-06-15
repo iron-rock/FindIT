@@ -14,7 +14,7 @@ export const registerPresetsByRole: Record<
   }
 > = {
   finder: {
-    phone: '900 123-45-67',
+    phone: '+7 900 123-45-67',
     phoneCountry: 'RU',
     password: 'password123',
     primaryLabel: 'Имя и фамилия',
@@ -23,7 +23,7 @@ export const registerPresetsByRole: Record<
     secondaryValue: 'React Native • 4 года',
   },
   recruiter: {
-    phone: '900 987-65-43',
+    phone: '+7 900 987-65-43',
     phoneCountry: 'RU',
     password: 'password123',
     primaryLabel: 'Компания',

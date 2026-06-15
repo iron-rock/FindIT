@@ -13,6 +13,7 @@ type FormFieldProps = {
   onChangeText: (text: string) => void;
   onFocus: () => void;
   onBlur: () => void;
+  hidePlaceholder?: boolean;
 };
 
 /** Поле формы авторизации/регистрации на «стеклянной» поверхности. */
@@ -23,12 +24,14 @@ export function FormField({
   onChangeText,
   onFocus,
   onBlur,
+  hidePlaceholder = false,
 }: FormFieldProps) {
   const { t } = useTranslation();
+  const label = t(field.labelKey);
 
   return (
     <View style={styles.fieldGroup}>
-      <Text style={styles.label}>{t(field.labelKey)}</Text>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
       <View
         style={[
           styles.inputWrap,
@@ -46,7 +49,7 @@ export function FormField({
           keyboardType={field.keyboardType ?? "default"}
           autoCapitalize={field.autoCapitalize ?? "sentences"}
           autoCorrect={!field.secure}
-          placeholder={t(field.placeholderKey)}
+          placeholder={hidePlaceholder ? "" : t(field.placeholderKey)}
           placeholderTextColor="rgba(255, 255, 255, 0.45)"
           style={[styles.input, field.multiline && styles.inputMultiline]}
         />

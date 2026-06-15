@@ -1,5 +1,5 @@
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet } from 'react-native';
 
 import { colors } from '../theme/colors';
@@ -18,41 +18,52 @@ type SplashVideoProps = {
 /** Полноэкранный видео-сплеш поверх приложения; вызывает onFinish по завершении. */
 export function SplashVideo({ onFinish }: SplashVideoProps) {
   const finishedRef = useRef(false);
+  const playbackStartedRef = useRef(false);
+  const onFinishRef = useRef(onFinish);
   const opacity = useRef(new Animated.Value(1)).current;
+
+  onFinishRef.current = onFinish;
 
   const player = useVideoPlayer(SPLASH_SOURCE, (instance) => {
     instance.loop = false;
     instance.muted = true;
     instance.volume = 0;
-    // Не запускаем сразу: ждём, пока появится первый кадр (см. statusChange).
   });
 
-  const finishOnce = useCallback(() => {
-    if (finishedRef.current) {
-      return;
-    }
-    finishedRef.current = true;
-    player.pause();
-    Animated.timing(opacity, {
-      toValue: 0,
-      duration: FADE_OUT_MS,
-      useNativeDriver: true,
-    }).start(() => onFinish());
-  }, [opacity, onFinish, player]);
-
   useEffect(() => {
-    // Как только видео готово (первый кадр уже виден) — даём ему «подержаться»
-    // статичным мгновение и запускаем воспроизведение.
+    const finishOnce = () => {
+      if (finishedRef.current) {
+        return;
+      }
+      finishedRef.current = true;
+      player.pause();
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: FADE_OUT_MS,
+        useNativeDriver: true,
+      }).start(() => onFinishRef.current());
+    };
+
+    const startPlaybackOnce = () => {
+      if (finishedRef.current || playbackStartedRef.current) {
+        return;
+      }
+      if (player.status !== 'readyToPlay') {
+        return;
+      }
+      playbackStartedRef.current = true;
+      player.play();
+    };
+
     const statusSub = player.addListener('statusChange', ({ status }) => {
       if (status === 'readyToPlay') {
-        player.play();
+        startPlaybackOnce();
       } else if (status === 'error') {
         finishOnce();
       }
     });
-    if (player.status === 'readyToPlay') {
-      player.play();
-    }
+
+    startPlaybackOnce();
 
     const timer = setTimeout(finishOnce, SPLASH_DURATION_MS);
 
@@ -60,7 +71,7 @@ export function SplashVideo({ onFinish }: SplashVideoProps) {
       statusSub.remove();
       clearTimeout(timer);
     };
-  }, [player, finishOnce]);
+  }, [opacity, player]);
 
   return (
     <Animated.View style={[styles.container, { opacity }]} pointerEvents="none">

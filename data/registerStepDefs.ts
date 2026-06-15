@@ -15,6 +15,7 @@ export type RegisterFieldKey =
   | 'position'
   | 'salary'
   | 'workFormat'
+  | 'selectedAiTools'
   | 'aiTools'
   | 'github'
   | 'company'
@@ -31,7 +32,7 @@ export type RegisterFieldDef = {
   autoCapitalize?: 'none' | 'sentences' | 'words';
 };
 
-export type RegisterStepKind = 'form' | 'verify';
+export type RegisterStepKind = 'form' | 'verify' | 'highlights';
 
 export type RegisterStepDef = {
   id: string;
@@ -57,12 +58,12 @@ const VERIFY_STEP: RegisterStepDef = {
   titleKey: 'auth.verifyPhoneTitle',
   hintKey: 'auth.verifyPhoneHint',
   fields: [OTP_FIELD],
-  skippable: true,
+  skippable: false,
 };
 
-const AI_FIELD: RegisterFieldDef = {
+const AI_NOTES_FIELD: RegisterFieldDef = {
   key: 'aiTools',
-  labelKey: 'register.finder.aiTools',
+  labelKey: 'register.finder.aiToolsNotes',
   placeholderKey: 'register.finder.aiToolsPh',
   multiline: true,
 };
@@ -79,10 +80,11 @@ export const FINDER_REGISTER_STEPS: RegisterStepDef[] = [
   VERIFY_STEP,
   {
     id: 'highlights',
+    kind: 'highlights',
     titleKey: 'register.finder.aiTitle',
     hintKey: 'register.finder.aiHint',
-    skippable: true,
-    fields: [AI_FIELD, GITHUB_FIELD],
+    skippable: false,
+    fields: [AI_NOTES_FIELD, GITHUB_FIELD],
   },
 ];
 
@@ -109,6 +111,7 @@ export const EMPTY_REGISTER_FORM: RegisterFormState = {
   position: '',
   salary: '',
   workFormat: '',
+  selectedAiTools: '',
   aiTools: '',
   github: '',
   company: '',

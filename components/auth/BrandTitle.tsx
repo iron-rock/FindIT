@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View, type TextStyle } from 'react-native';
 
-import { font } from '../../theme';
+import { playfairFontFamily } from '../../theme';
 
 /**
  * Анимированный логотип-заголовок «FindIT».
@@ -10,16 +10,7 @@ import { font } from '../../theme';
  * повторяется.
  */
 
-type Letter = { ch: string; weight: '600' | '700' | '800' | '900' };
-
-const LETTERS: Letter[] = [
-  { ch: 'F', weight: '900' },
-  { ch: 'i', weight: '700' },
-  { ch: 'n', weight: '700' },
-  { ch: 'd', weight: '700' },
-  { ch: 'I', weight: '900' },
-  { ch: 'T', weight: '900' },
-];
+const LETTERS = ['F', 'i', 'n', 'd', 'I', 'T'] as const;
 
 const N = LETTERS.length;
 const LIGHTUP_MS = 2400;
@@ -81,26 +72,26 @@ export function BrandTitle({ fontSize = 52 }: BrandTitleProps) {
             offStart / TOTAL,
             offEnd / TOTAL,
           ],
-          outputRange: [0, 14, 14, 0],
+          outputRange: [0, 8, 8, 0],
           extrapolate: 'clamp',
         });
 
         const letterStyle: Animated.WithAnimatedObject<TextStyle> = {
           fontSize,
           color,
-          textShadowColor: 'rgba(143, 211, 255, 0.9)',
+          textShadowColor: 'rgba(143, 211, 255, 0.75)',
           textShadowOffset: { width: 0, height: 0 },
           textShadowRadius: glow,
-          ...font(letter.weight),
+          fontFamily: playfairFontFamily.semiBoldItalic,
         };
 
         return (
           <Animated.Text
-            key={`${letter.ch}-${index}`}
+            key={`${letter}-${index}`}
             allowFontScaling={false}
             style={[styles.letter, letterStyle]}
           >
-            {letter.ch}
+            {letter}
           </Animated.Text>
         );
       })}
@@ -116,9 +107,10 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     paddingHorizontal: 6,
     paddingVertical: 4,
+    transform: [{ skewX: '-10deg' }],
   },
   letter: {
-    letterSpacing: -1.6,
+    letterSpacing: 0,
     includeFontPadding: false,
     overflow: 'visible',
     // Свечение (textShadowRadius) на Android обрезается по рамке самого Text —
