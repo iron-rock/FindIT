@@ -9,6 +9,7 @@ import {
 
 import type { CandidateAnketa } from '../../data/candidateAnkety';
 import { colors, Text } from '../../theme';
+import { outlineBlock, outlineBorder, outlineRadius } from '../../theme/surface';
 
 const SCREEN_W = Dimensions.get('window').width;
 const ROT_MAX_DEG = 11;
@@ -118,7 +119,7 @@ export function CandidateSwipeCard({
         Пропуск
       </Animated.Text>
       <View style={styles.card}>
-        <View style={styles.topRow}>
+        <View style={styles.profileRow}>
           <View style={styles.avatar}>
             <Text style={styles.avatarLetters}>
               {candidate.displayName
@@ -129,33 +130,7 @@ export function CandidateSwipeCard({
                 .toUpperCase()}
             </Text>
           </View>
-          <View style={styles.topTexts}>
-            <Text style={styles.name}>{candidate.displayName}</Text>
-            <Text style={styles.headline}>{candidate.headline}</Text>
-            <Text style={styles.meta}>
-              {candidate.yearsExperience} года опыта · {candidate.locationFormat}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.chipsWrap}>
-          {candidate.stack.slice(0, 6).map((label) => (
-            <View key={label} style={styles.chip}>
-              <Text style={styles.chipText}>{label}</Text>
-            </View>
-          ))}
-        </View>
-
-        <Text style={styles.salary}>{candidate.salaryRange}</Text>
-        <Text style={styles.about} numberOfLines={6}>
-          {candidate.about}
-        </Text>
-        <View style={styles.highlights}>
-          {candidate.highlights.map((h) => (
-            <Text key={h} style={styles.highlightLine}>
-              · {h}
-            </Text>
-          ))}
+          <Text style={styles.name}>{candidate.displayName}</Text>
         </View>
       </View>
     </Animated.View>
@@ -164,11 +139,9 @@ export function CandidateSwipeCard({
 
 const styles = StyleSheet.create({
   wrapper: {
-    width: SCREEN_W - 56,
-    alignSelf: 'center',
+    height: '100%',
+    width: '100%',
     zIndex: 2,
-    borderRadius: 22,
-    backgroundColor: 'transparent',
   },
   floatAgree: {
     position: 'absolute',
@@ -191,91 +164,33 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '-12deg' }],
   },
   card: {
-    borderRadius: 22,
+    flex: 1,
     padding: 22,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    minHeight: Dimensions.get('window').height * 0.62,
+    ...outlineBlock(outlineRadius),
   },
-  topRow: {
+  profileRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 16,
-    marginBottom: 18,
   },
   avatar: {
     width: 72,
     height: 72,
-    borderRadius: 18,
+    borderRadius: outlineRadius,
     backgroundColor: colors.interactivePressed,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    ...outlineBorder,
   },
   avatarLetters: {
     fontSize: 22,
     fontWeight: '700',
     color: colors.textPrimary,
   },
-  topTexts: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 4,
-  },
   name: {
+    flex: 1,
     fontSize: 23,
     fontWeight: '700',
     color: colors.textPrimary,
-  },
-  headline: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textMuted,
-  },
-  meta: {
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  chipsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
-  },
-  chip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-  },
-  chipText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  salary: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 14,
-  },
-  about: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: colors.textMuted,
-    marginBottom: 14,
-  },
-  highlights: {
-    gap: 6,
-    marginTop: 4,
-  },
-  highlightLine: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.textPrimary,
-    fontWeight: '500',
   },
 });

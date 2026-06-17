@@ -21,12 +21,13 @@ import { FormField } from "../components/auth/FormField";
 import { OtpInput } from "../components/auth/OtpInput";
 import { PhoneField } from "../components/auth/PhoneField";
 import { RoleCheckboxes } from "../components/auth/RoleCheckboxes";
+import { AuthCtaRow } from "../components/auth/AuthCtaRow";
 import { SocialAuthButtons } from "../components/auth/SocialAuthButtons";
 import { StepDots } from "../components/auth/StepDots";
 import { ConstellationBackground } from "../components/background/ConstellationBackground";
 import { GradientBackground } from "../components/background/GradientBackground";
 import { MovingShadowOverlay } from "../components/background/MovingShadowOverlay";
-import { glassAuthRadius } from "../components/ui/GlassSurface";
+import { OutlineButton } from "../components/ui/OutlineButton";
 import { registerPresetsByRole } from "../data/registerPresets";
 import { formatSelectedAiTools } from "../data/aiToolsCatalog";
 import {
@@ -58,6 +59,8 @@ export type WelcomeScreenProps = NativeStackScreenProps<
 
 /** Верхняя позиция названия на шагах входа/регистрации. */
 const AUTH_TITLE_TOP = 48;
+/** Единый вертикальный gap между блоками на 3-м шаге. */
+const HIGHLIGHTS_BLOCK_GAP = 16;
 
 type Phase = "intent" | "login" | "register";
 
@@ -83,15 +86,6 @@ function getPhoneCountry(form: RegisterFormState): PhoneCountryCode {
   );
 }
 
-function syncPhoneCountry(
-  setField: (key: RegisterFieldKey, value: string) => void,
-  country: PhoneCountryCode | null,
-) {
-  if (country) {
-    setField("phoneCountry", country);
-  }
-}
-
 export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
   const { t } = useTranslation();
   const splashDone = useSplashDone();
@@ -110,6 +104,7 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
   const contentShift = useRef(new Animated.Value(0)).current;
   const logoLift = useRef(new Animated.Value(0)).current;
   const titleScale = useRef(new Animated.Value(1)).current;
+  const progressScale = useRef(new Animated.Value(1)).current;
   const intentTitleOpacity = useRef(new Animated.Value(0)).current;
   const intentTitleShift = useRef(new Animated.Value(-INTENT_ENTER_SHIFT)).current;
   const intentButtonsOpacity = useRef(new Animated.Value(0)).current;
@@ -173,15 +168,15 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
     outputRange: [intentGroupOffset, 0],
   });
 
-  const createTitleGrowAnim = () =>
+  const createGrowAnim = (scale: Animated.Value) =>
     Animated.sequence([
-      Animated.timing(titleScale, {
+      Animated.timing(scale, {
         toValue: 0.97,
         duration: 280,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
-      Animated.timing(titleScale, {
+      Animated.timing(scale, {
         toValue: 1,
         duration: 440,
         easing: Easing.inOut(Easing.cubic),
@@ -189,9 +184,11 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
       }),
     ]);
 
-  const pulseTitleGrow = () => {
-    titleScale.stopAnimation();
-    createTitleGrowAnim().start();
+  const createTitleGrowAnim = () => createGrowAnim(titleScale);
+
+  const pulseProgressGrow = () => {
+    progressScale.stopAnimation();
+    createGrowAnim(progressScale).start();
   };
 
   const liftLogo = (toValue: 0 | 1) => {
@@ -226,6 +223,7 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
   const currentStep: RegisterStepDef | undefined = isAccountStep
     ? undefined
     : formSteps[stepIndex - 1];
+  const isHighlightsStep = currentStep?.kind === "highlights";
   const isLast = !isAccountStep && stepIndex === formSteps.length;
   const stepDotsCount = role
     ? 1 + formSteps.length
@@ -237,10 +235,10 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
   const transition = (
     apply: () => void,
     direction: 1 | -1 = 1,
-    options?: { pulseTitle?: boolean },
+    options?: { pulseProgress?: boolean },
   ) => {
-    if (options?.pulseTitle) {
-      pulseTitleGrow();
+    if (options?.pulseProgress) {
+      pulseProgressGrow();
     }
 
     Animated.parallel([
@@ -333,13 +331,8 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
     const selectedToolsLabel = formatSelectedAiTools(form.selectedAiTools, t);
     const subtitleParts =
       role === "finder"
-        ? [
-            selectedToolsLabel,
-            form.aiTools.trim(),
-            form.github.trim(),
-            phoneLabel,
-          ].filter(Boolean)
-        : [phoneLabel].filter(Boolean);
+        ? [selectedToolsLabel, form.github.trim(), phoneLabel].filter(Boolean)
+        : [form.company.trim(), form.email.trim(), phoneLabel].filter(Boolean);
 
     navigation.replace("Main", {
       role,
@@ -370,7 +363,7 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
             }));
           },
           1,
-          { pulseTitle: true },
+          { pulseProgress: true },
         );
       }
       return;
@@ -379,7 +372,7 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
       completeRegister();
       return;
     }
-    transition(() => setStepIndex(stepIndex + 1), 1, { pulseTitle: true });
+    transition(() => setStepIndex(stepIndex + 1), 1, { pulseProgress: true });
   };
 
   const goBack = () => {
@@ -391,7 +384,9 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
       if (stepIndex === 0) {
         goToIntent();
       } else {
-        transition(() => setStepIndex(stepIndex - 1), -1, { pulseTitle: true });
+        transition(() => setStepIndex(stepIndex - 1), -1, {
+          pulseProgress: true,
+        });
       }
     }
   };
@@ -444,38 +439,47 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
         >
           <ScrollView
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[
+              styles.scrollContent,
+              isHighlightsStep && styles.scrollContentHighlights,
+            ]}
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.mainColumn}>
               <Animated.View
-                style={{
-                  transform: [{ translateY: groupTranslateY }],
-                }}
+                style={{ transform: [{ translateY: groupTranslateY }] }}
               >
-                <Animated.View
+                <View
                   style={[
                     styles.titleBlock,
                     phase === "intent" && styles.titleBlockIntent,
                     showDots && styles.titleBlockWithDots,
                     styles.titleBlockAuth,
-                    {
+                  ]}
+                >
+                  <Animated.View
+                    style={{
                       opacity: intentTitleOpacity,
                       transform: [
                         { scale: titleScale },
                         { translateY: intentTitleShift },
                       ],
-                    },
-                  ]}
-                >
-                  <BrandTitle fontSize={56} />
+                    }}
+                  >
+                    <BrandTitle fontSize={56} />
+                  </Animated.View>
 
                   {showDots ? (
-                    <View style={styles.dotsWrap}>
+                    <Animated.View
+                      style={[
+                        styles.dotsWrap,
+                        { transform: [{ scale: progressScale }] },
+                      ]}
+                    >
                       <StepDots count={stepDotsCount} current={stepIndex} />
-                    </View>
+                    </Animated.View>
                   ) : null}
-                </Animated.View>
+                </View>
 
                 <Animated.View
                   style={[
@@ -497,7 +501,7 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
                         },
                       ]}
                     >
-                      <GlassButton
+                      <OutlineButton
                         title={t("welcome.register")}
                         onPress={goToRegister}
                         style={styles.intentPrimaryButton}
@@ -532,9 +536,6 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
                           value={form.phone}
                           focused={focused === "phone"}
                           onChangeText={(text) => setField("phone", text)}
-                          onCountryDetected={(country) =>
-                            syncPhoneCountry(setField, country)
-                          }
                           onFocus={() => setFocused("phone")}
                           onBlur={() => setFocused(null)}
                         />
@@ -554,18 +555,16 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
                         />
                       </View>
 
-                      <GlassButton
+                      <AuthCtaRow
                         title={registerCtaLabel}
                         onPress={goNextRegister}
+                        onBack={goBack}
                         disabled={ctaDisabled}
                         style={styles.cta}
                       />
 
                       <View style={styles.socialBlock}>
-                        <SocialAuthButtons
-                          onBack={goBack}
-                          onPress={completeRegister}
-                        />
+                        <SocialAuthButtons onPress={completeRegister} />
                       </View>
                     </>
                   ) : currentStep?.kind === "verify" ? (
@@ -604,66 +603,42 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
                         </Text>
                       </Pressable>
 
-                      <GlassButton
+                      <AuthCtaRow
                         title={registerCtaLabel}
                         onPress={goNextRegister}
+                        onBack={goBack}
                         style={styles.cta}
                       />
-
-                      <View style={styles.socialBlock}>
-                        <SocialAuthButtons onBack={goBack} />
-                      </View>
                     </>
                   ) : currentStep?.kind === "highlights" ? (
-                    <>
-                      <Text style={styles.heading}>
-                        {t(currentStep.titleKey)}
-                      </Text>
-                      {currentStep.hintKey && t(currentStep.hintKey) ? (
-                        <Text style={styles.helper}>
-                          {t(currentStep.hintKey)}
-                        </Text>
-                      ) : null}
-
-                      <View style={styles.form}>
-                        <AiToolsPicker
-                          value={form.selectedAiTools}
-                          onChange={(value) => setField("selectedAiTools", value)}
-                        />
-                        <FormField
-                          field={currentStep.fields[0]}
-                          value={form.aiTools}
-                          focused={focused === "aiTools"}
-                          hidePlaceholder
-                          onChangeText={(text) => setField("aiTools", text)}
-                          onFocus={() => setFocused("aiTools")}
-                          onBlur={() => setFocused(null)}
-                        />
-                        <FormField
-                          field={currentStep.fields[1]}
-                          value={form.github}
-                          focused={focused === "github"}
-                          onChangeText={(text) => setField("github", text)}
-                          onFocus={() => setFocused("github")}
-                          onBlur={() => setFocused(null)}
-                        />
-                      </View>
-
-                      <GlassButton
+                    <View style={styles.highlightsStack}>
+                      <AiToolsPicker
+                        compact
+                        value={form.selectedAiTools}
+                        onChange={(value) => setField("selectedAiTools", value)}
+                      />
+                      <FormField
+                        field={currentStep.fields[0]}
+                        value={form.github}
+                        focused={focused === "github"}
+                        onChangeText={(text) => setField("github", text)}
+                        onFocus={() => setFocused("github")}
+                        onBlur={() => setFocused(null)}
+                      />
+                      <AuthCtaRow
                         title={registerCtaLabel}
                         onPress={goNextRegister}
-                        style={styles.cta}
+                        onBack={goBack}
+                        style={styles.highlightsCta}
                       />
-
-                      <View style={styles.socialBlock}>
-                        <SocialAuthButtons onBack={goBack} />
-                      </View>
-                    </>
+                    </View>
                   ) : currentStep ? (
                     <>
-                      <Text style={styles.heading}>
-                        {t(currentStep.titleKey)}
-                      </Text>
+                      {currentStep.titleKey ? (
+                        <Text style={styles.heading}>
+                          {t(currentStep.titleKey)}
+                        </Text>
+                      ) : null}
                       {currentStep.hintKey && t(currentStep.hintKey) ? (
                         <Text style={styles.helper}>
                           {t(currentStep.hintKey)}
@@ -684,15 +659,12 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
                         ))}
                       </View>
 
-                      <GlassButton
+                      <AuthCtaRow
                         title={registerCtaLabel}
                         onPress={goNextRegister}
+                        onBack={goBack}
                         style={styles.cta}
                       />
-
-                      <View style={styles.socialBlock}>
-                        <SocialAuthButtons onBack={goBack} />
-                      </View>
 
                       {currentStep.skippable ? (
                         <Pressable
@@ -747,11 +719,6 @@ function LoginContent({
           value={phone}
           focused={focused === "phone"}
           onChangeText={(text) => onChange("phone", text)}
-          onCountryDetected={(country) => {
-            if (country) {
-              onChange("phoneCountry", country);
-            }
-          }}
           onFocus={() => onFocus("phone")}
           onBlur={onBlur}
         />
@@ -765,57 +732,17 @@ function LoginContent({
         />
       </View>
 
-      <GlassButton
+      <AuthCtaRow
         title={t("auth.signInCta")}
         onPress={onSubmit}
+        onBack={onBack}
         style={styles.cta}
       />
 
       <View style={styles.socialBlock}>
-        <SocialAuthButtons onBack={onBack} onPress={onSubmit} />
+        <SocialAuthButtons onPress={onSubmit} />
       </View>
     </>
-  );
-}
-
-type GlassButtonProps = {
-  title: string;
-  onPress: () => void;
-  disabled?: boolean;
-  radius?: number;
-  style?: object;
-  textStyle?: object;
-};
-
-function GlassButton({
-  title,
-  onPress,
-  disabled = false,
-  radius = glassAuthRadius,
-  style,
-  textStyle,
-}: GlassButtonProps) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={title}
-      disabled={disabled}
-      onPress={onPress}
-      style={[styles.buttonPressable, style]}
-    >
-      {({ pressed }) => (
-        <View
-          style={[
-            styles.buttonSurface,
-            { borderRadius: radius },
-            pressed && styles.buttonPressed,
-            disabled && styles.buttonDisabled,
-          ]}
-        >
-          <Text style={[styles.buttonText, textStyle]}>{title}</Text>
-        </View>
-      )}
-    </Pressable>
   );
 }
 
@@ -839,6 +766,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 12,
     paddingBottom: 40,
+  },
+  scrollContentHighlights: {
+    paddingBottom: 24,
   },
   mainColumn: {
     flexGrow: 1,
@@ -866,6 +796,13 @@ const styles = StyleSheet.create({
   },
   contentIntent: {
     marginTop: -8,
+  },
+  highlightsStack: {
+    alignSelf: "stretch",
+    gap: HIGHLIGHTS_BLOCK_GAP,
+  },
+  highlightsCta: {
+    marginTop: 12,
   },
   intentColumn: {
     alignItems: "center",
@@ -959,30 +896,5 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontWeight: "400",
     ...font("400"),
-  },
-  buttonPressable: {
-    alignSelf: "stretch",
-  },
-  buttonSurface: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.22)",
-  },
-  buttonPressed: {
-    borderColor: "rgba(255, 255, 255, 0.4)",
-  },
-  buttonDisabled: {
-    opacity: 0.45,
-  },
-  buttonText: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: colors.textPrimary,
-    textAlign: "center",
-    ...font("500"),
   },
 });

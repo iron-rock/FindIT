@@ -8,28 +8,31 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const outDir = path.resolve(__dirname, '../assets/ai-tools');
 
 /** Порядок = популярность среди разработчиков (слева направо, сверху вниз). */
-/** @type {{ id: string; url: string }[]} */
+/** @type {{ id: string; url?: string; file?: string }[]} */
 const TOOLS = [
   { id: 'githubCopilot', url: 'https://cdn.simpleicons.org/githubcopilot/ffffff' },
-  { id: 'chatgpt', url: 'https://cdn.jsdelivr.net/npm/simple-icons@14.0.0/icons/openai.svg' },
   { id: 'cursor', url: 'https://cdn.simpleicons.org/cursor/ffffff' },
   { id: 'claude', url: 'https://cdn.simpleicons.org/anthropic/ffffff' },
-  { id: 'gemini', url: 'https://cdn.simpleicons.org/googlegemini/ffffff' },
+  { id: 'codex', file: 'codex.svg' },
   { id: 'windsurf', url: 'https://cdn.simpleicons.org/windsurf/ffffff' },
+  { id: 'gemini', url: 'https://cdn.simpleicons.org/googlegemini/ffffff' },
   {
     id: 'microsoftCopilot',
     url: 'https://cdn.jsdelivr.net/gh/callback-io/allogo@main/public/logos/microsoft-copilot/icon.svg',
   },
   { id: 'jetbrainsAi', url: 'https://cdn.simpleicons.org/jetbrains/ffffff' },
-  { id: 'v0', url: 'https://cdn.simpleicons.org/v0/ffffff' },
+  {
+    id: 'antigravity',
+    url: 'https://cdn.jsdelivr.net/gh/lobehub/lobe-icons@latest/packages/static-svg/icons/antigravity.svg',
+  },
   { id: 'replit', url: 'https://cdn.simpleicons.org/replit/ffffff' },
   {
     id: 'amazonQ',
     url: 'https://cdn.jsdelivr.net/npm/simple-icons@14.0.0/icons/amazonwebservices.svg',
   },
   {
-    id: 'sourcegraphCody',
-    url: 'https://sourcegraph.com/.assets/img/sourcegraph-mark.svg',
+    id: 'chatgpt',
+    url: 'https://cdn.jsdelivr.net/npm/simple-icons@14/icons/openai.svg',
   },
 ];
 
@@ -83,8 +86,10 @@ async function download(url) {
   return Buffer.from(await response.arrayBuffer());
 }
 
-async function convertTool({ id, url }) {
-  const raw = await download(url);
+async function convertTool({ id, url, file }) {
+  const raw = file
+    ? fs.readFileSync(path.join(outDir, file))
+    : await download(url);
   const svg = Buffer.from(normalizeSvgToWhite(raw.toString('utf8')), 'utf8');
   const outPath = path.join(outDir, `${id}.webp`);
   await rasterizeWhiteIcon(svg, outPath);

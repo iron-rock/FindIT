@@ -10,7 +10,13 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import { colors } from "../../theme";
+import {
+  outlineBorderColor,
+  outlineBorderColorFocused,
+  outlineBorderWidth,
+  outlineBorderWidthFocused,
+  outlineRadius,
+} from "../../theme/surface";
 
 const isIOS = Platform.OS === "ios";
 
@@ -34,7 +40,7 @@ export const useLiquidGlass = ((): boolean => {
 export const glassButtonRadius = useLiquidGlass ? 14 : isIOS ? 10 : 8;
 export const glassInputRadius = useLiquidGlass ? 12 : isIOS ? 8 : 8;
 /** Минимальный радиус рамки на экранах входа/регистрации (как кнопка «Регистрация» на welcome). */
-export const glassAuthRadius = 4;
+export const glassAuthRadius = outlineRadius;
 
 type GlassSurfaceProps = {
   children: ReactNode;
@@ -44,6 +50,8 @@ type GlassSurfaceProps = {
   pressed?: boolean;
   /** Яркая рамка-подсветка (для сфокусированного инпута). */
   highlight?: boolean;
+  /** Переопределение цвета рамки (например белая на tab bar). */
+  borderColor?: string;
   onLayout?: (event: LayoutChangeEvent) => void;
 };
 
@@ -61,8 +69,12 @@ export function GlassSurface({
   radius = glassButtonRadius,
   pressed = false,
   highlight = false,
+  borderColor,
   onLayout,
 }: GlassSurfaceProps) {
+  const ringColor =
+    borderColor ?? (highlight ? outlineBorderColorFocused : outlineBorderColor);
+
   const ring = (
     <View
       pointerEvents="none"
@@ -70,10 +82,8 @@ export function GlassSurface({
         StyleSheet.absoluteFillObject,
         {
           borderRadius: radius,
-          borderWidth: highlight ? 1.5 : StyleSheet.hairlineWidth,
-          borderColor: highlight
-            ? colors.accentBright
-            : "rgba(255, 255, 255, 0.18)",
+          borderWidth: highlight ? outlineBorderWidthFocused : outlineBorderWidth,
+          borderColor: ringColor,
         },
       ]}
     />

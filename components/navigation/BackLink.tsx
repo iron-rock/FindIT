@@ -10,6 +10,8 @@ type BackLinkProps = {
   label?: string;
   /** Только стрелка, без подписи «Назад». */
   iconOnly?: boolean;
+  /** Центрировать в квадратном слоте рядом с CTA. */
+  inCtaRow?: boolean;
   iconColor?: string;
   labelColor?: string;
 };
@@ -20,6 +22,7 @@ export function BackLink({
   accessibilityLabel,
   label,
   iconOnly = false,
+  inCtaRow = false,
   iconColor = colors.accentBright,
   labelColor = colors.accentBright,
 }: BackLinkProps) {
@@ -35,6 +38,7 @@ export function BackLink({
       style={({ pressed }) => [
         styles.root,
         iconOnly && styles.rootIconOnly,
+        inCtaRow && styles.rootInCtaRow,
         pressed && styles.pressed,
       ]}
     >
@@ -62,6 +66,13 @@ const styles = StyleSheet.create({
   },
   rootIconOnly: {
     marginBottom: 0,
+  },
+  rootInCtaRow: {
+    marginLeft: 0,
+    marginBottom: 0,
+    paddingVertical: 0,
+    paddingRight: 0,
+    alignSelf: 'center',
   },
   pressed: {
     opacity: 0.72,

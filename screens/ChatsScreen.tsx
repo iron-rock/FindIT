@@ -4,6 +4,7 @@ import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 
 import type { MainTabParamList } from '../navigation/types';
 import { colors, Text } from '../theme';
+import { outlineBlock, outlineRadius } from '../theme/surface';
 
 /** Диалоги для макета; позже — реальная переписка с сервером. */
 const CHAT_ROWS = [
@@ -78,11 +79,8 @@ const styles = StyleSheet.create({
   },
   thread: {
     padding: 18,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     gap: 8,
+    ...outlineBlock(outlineRadius),
   },
   threadTop: {
     flexDirection: 'row',

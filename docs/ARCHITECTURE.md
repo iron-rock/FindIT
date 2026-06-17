@@ -42,7 +42,7 @@ FindIT/
 │  └─ ProfileScreen.tsx     # Профиль + выход
 ├─ components/
 │  ├─ swipe/CandidateSwipeCard.tsx     # Карточка резюме в свайпе
-│  ├─ navigation/ExpandableFabTabBar.tsx # Кастомный таб-бар (FAB)
+│  ├─ navigation/MainTabBar.tsx          # Кастомный таб-бар (pill, 3 таба)
 │  ├─ icons/FabRouteGlyph.tsx
 │  └─ dev/DevPanel.tsx      # Dev-панель: вход/выход + смена роли через Supabase
 ├─ contexts/

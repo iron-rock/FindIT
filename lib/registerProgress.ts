@@ -121,13 +121,16 @@ export async function saveRegisterStep(
           .limit(1)
           .maybeSingle();
 
+        const companyPayload = {
+          name: form.company.trim(),
+          industry: form.industry.trim() || null,
+          description: form.companyLink.trim() || null,
+        };
+
         if (existing?.id) {
           const { error } = await supabase
             .from('companies')
-            .update({
-              name: form.company.trim(),
-              industry: form.industry.trim() || null,
-            })
+            .update(companyPayload)
             .eq('id', existing.id);
           if (error && __DEV__) {
             console.info('[FindIT] companies update:', error.message);
@@ -135,8 +138,7 @@ export async function saveRegisterStep(
         } else {
           const { error } = await supabase.from('companies').insert({
             owner_id: userId,
-            name: form.company.trim(),
-            industry: form.industry.trim() || null,
+            ...companyPayload,
           });
           if (error && __DEV__) {
             console.info('[FindIT] companies insert:', error.message);

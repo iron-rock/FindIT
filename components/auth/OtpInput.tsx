@@ -10,7 +10,13 @@ import {
 } from "react-native";
 
 import { colors, font, Text } from "../../theme";
-import { glassAuthRadius } from "../ui/GlassSurface";
+import {
+  outlineBorder,
+  outlineBorderFocused,
+  outlineFill,
+  outlineRadius,
+  outlineSurface,
+} from "../../theme/surface";
 
 const DEFAULT_LENGTH = 6;
 const BOX_GAP = 10;
@@ -69,9 +75,9 @@ function OtpDigitCell({ digit, isActive }: OtpDigitCellProps) {
   return (
     <View
       style={[
+        outlineSurface(outlineRadius),
         styles.box,
-        { borderRadius: glassAuthRadius },
-        isActive && styles.boxFocused,
+        isActive && outlineBorderFocused,
       ]}
     >
       {digit ? (
@@ -168,14 +174,6 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.22)",
-    overflow: "hidden",
-  },
-  boxFocused: {
-    borderColor: colors.textPrimary,
-    borderWidth: 1.5,
   },
   digit: {
     fontSize: 17,

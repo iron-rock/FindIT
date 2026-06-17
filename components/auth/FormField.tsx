@@ -4,7 +4,11 @@ import { useTranslation } from "react-i18next";
 
 import type { RegisterFieldDef } from "../../data/registerStepDefs";
 import { colors, font, Text, TextInput } from "../../theme";
-import { glassAuthRadius } from "../ui/GlassSurface";
+import {
+  outlineBorderFocused,
+  outlineRadius,
+  outlineSurface,
+} from "../../theme/surface";
 
 type FormFieldProps = {
   field: RegisterFieldDef;
@@ -34,9 +38,8 @@ export function FormField({
       {label ? <Text style={styles.label}>{label}</Text> : null}
       <View
         style={[
-          styles.inputWrap,
-          { borderRadius: glassAuthRadius },
-          focused && styles.inputWrapFocused,
+          outlineSurface(outlineRadius),
+          focused && outlineBorderFocused,
         ]}
       >
         <TextInput
@@ -61,16 +64,6 @@ export function FormField({
 const styles = StyleSheet.create({
   fieldGroup: {
     gap: 8,
-  },
-  inputWrap: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.22)",
-    overflow: "hidden",
-  },
-  inputWrapFocused: {
-    borderColor: colors.accentBright,
-    borderWidth: 1.5,
   },
   label: {
     fontSize: 13,

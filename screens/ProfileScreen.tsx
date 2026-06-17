@@ -6,6 +6,13 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMainSession } from '../navigation/MainSessionContext';
 import type { MainTabParamList, RootStackParamList } from '../navigation/types';
 import { colors, Text } from '../theme';
+import {
+  outlineBlock,
+  outlineBorder,
+  outlineBorderPressed,
+  outlineFill,
+  outlineRadius,
+} from '../theme/surface';
 
 export type ProfileScreenProps = BottomTabScreenProps<MainTabParamList, 'Profile'>;
 
@@ -30,7 +37,14 @@ export function ProfileScreen({ navigation }: ProfileScreenProps) {
         <Text style={styles.secondary}>{t('profile.cardHint')}</Text>
       </View>
 
-      <Pressable accessibilityRole="button" style={({ pressed }) => [styles.outline, pressed && styles.outlinePressed]} onPress={signOut}>
+      <Pressable
+        accessibilityRole="button"
+        style={({ pressed }) => [
+          styles.outline,
+          pressed && outlineBorderPressed,
+        ]}
+        onPress={signOut}
+      >
         <Text style={styles.outlineLabel}>{t('common.signOut')}</Text>
       </Pressable>
     </View>
@@ -61,12 +75,9 @@ const styles = StyleSheet.create({
   },
   card: {
     gap: 10,
-    borderRadius: 18,
     padding: 22,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     marginBottom: 28,
+    ...outlineBlock(outlineRadius),
   },
   badge: {
     alignSelf: 'flex-start',
@@ -80,8 +91,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     color: colors.textMuted,
     backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    ...outlineBorder,
   },
   primary: {
     fontSize: 24,
@@ -98,14 +108,9 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingVertical: 14,
     paddingHorizontal: 20,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    backgroundColor: colors.surfaceMuted,
-  },
-  outlinePressed: {
-    opacity: 0.9,
-    backgroundColor: colors.surface,
+    borderRadius: outlineRadius,
+    backgroundColor: outlineFill,
+    ...outlineBorder,
   },
   outlineLabel: {
     fontSize: 16,

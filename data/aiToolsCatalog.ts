@@ -8,19 +8,14 @@ export type AiToolCatalogItem = {
   logo: ImageSourcePropType;
 };
 
-export const MAX_SELECTED_AI_TOOLS = 3;
+export const MAX_SELECTED_AI_TOOLS = 2;
 
-/** Популярные AI-инструменты (белые лого в WebP), порядок = популярность. */
+/** Популярные AI-инструменты (белые лого WebP). Порядок = популярность. */
 export const AI_TOOLS_CATALOG: AiToolCatalogItem[] = [
   {
     id: 'githubCopilot',
     nameKey: 'register.finder.aiToolsCatalog.githubCopilot',
     logo: require('../assets/ai-tools/githubCopilot.webp'),
-  },
-  {
-    id: 'chatgpt',
-    nameKey: 'register.finder.aiToolsCatalog.chatgpt',
-    logo: require('../assets/ai-tools/chatgpt.webp'),
   },
   {
     id: 'cursor',
@@ -33,14 +28,19 @@ export const AI_TOOLS_CATALOG: AiToolCatalogItem[] = [
     logo: require('../assets/ai-tools/claude.webp'),
   },
   {
-    id: 'gemini',
-    nameKey: 'register.finder.aiToolsCatalog.gemini',
-    logo: require('../assets/ai-tools/gemini.webp'),
+    id: 'codex',
+    nameKey: 'register.finder.aiToolsCatalog.codex',
+    logo: require('../assets/ai-tools/codex.webp'),
   },
   {
     id: 'windsurf',
     nameKey: 'register.finder.aiToolsCatalog.windsurf',
     logo: require('../assets/ai-tools/windsurf.webp'),
+  },
+  {
+    id: 'gemini',
+    nameKey: 'register.finder.aiToolsCatalog.gemini',
+    logo: require('../assets/ai-tools/gemini.webp'),
   },
   {
     id: 'microsoftCopilot',
@@ -53,9 +53,9 @@ export const AI_TOOLS_CATALOG: AiToolCatalogItem[] = [
     logo: require('../assets/ai-tools/jetbrainsAi.webp'),
   },
   {
-    id: 'v0',
-    nameKey: 'register.finder.aiToolsCatalog.v0',
-    logo: require('../assets/ai-tools/v0.webp'),
+    id: 'antigravity',
+    nameKey: 'register.finder.aiToolsCatalog.antigravity',
+    logo: require('../assets/ai-tools/antigravity.webp'),
   },
   {
     id: 'replit',
@@ -68,9 +68,9 @@ export const AI_TOOLS_CATALOG: AiToolCatalogItem[] = [
     logo: require('../assets/ai-tools/amazonQ.webp'),
   },
   {
-    id: 'sourcegraphCody',
-    nameKey: 'register.finder.aiToolsCatalog.sourcegraphCody',
-    logo: require('../assets/ai-tools/sourcegraphCody.webp'),
+    id: 'chatgpt',
+    nameKey: 'register.finder.aiToolsCatalog.chatgpt',
+    logo: require('../assets/ai-tools/chatgpt.webp'),
   },
 ];
 

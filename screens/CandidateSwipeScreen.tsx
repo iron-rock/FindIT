@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { Image, Pressable, StyleSheet, View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { Image, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -8,8 +8,19 @@ import { CandidateSwipeCard } from "../components/swipe/CandidateSwipeCard";
 import { candidateAnkety } from "../data/candidateAnkety";
 import type { MainTabParamList } from "../navigation/types";
 import { colors, Text } from "../theme";
+import {
+  outlineBlock,
+  outlineBorder,
+  outlineBorderPressed,
+  outlineRadius,
+} from "../theme/surface";
 
 const FILTERS_ICON = require("../assets/settings-v2.png");
+const FILTER_HEADER_BTN_H = 44;
+const FILTER_MARGIN_BOTTOM = 10;
+const CARD_TOP_GAP = 10;
+/** Как было: ~62% экрана, карточка по центру стека. */
+const LEGACY_CARD_HEIGHT_RATIO = 0.62;
 
 export type CandidateSwipeScreenProps = BottomTabScreenProps<
   MainTabParamList,
@@ -32,6 +43,18 @@ export function CandidateSwipeScreen(_props: CandidateSwipeScreenProps) {
 
   const empty = !current;
   const topPad = Math.max(insets.top, 10);
+  const { height: windowH } = useWindowDimensions();
+
+  const cardLayout = useMemo(() => {
+    const stackBottomPad = Math.max(insets.bottom, 14);
+    const filterBottomY = topPad + FILTER_HEADER_BTN_H + FILTER_MARGIN_BOTTOM;
+    const stackInnerH = windowH - filterBottomY - stackBottomPad;
+    const legacyCardH = windowH * LEGACY_CARD_HEIGHT_RATIO;
+    const cardBottomInset = stackBottomPad + (stackInnerH - legacyCardH) / 2;
+    const cardHeight = windowH - filterBottomY - CARD_TOP_GAP - cardBottomInset;
+
+    return { cardHeight, cardBottomInset };
+  }, [insets.bottom, topPad, windowH]);
 
   return (
     <View style={[styles.root, { paddingTop: topPad }]}>
@@ -44,6 +67,7 @@ export function CandidateSwipeScreen(_props: CandidateSwipeScreenProps) {
           style={({ pressed }) => [
             styles.filterGearBtn,
             pressed && styles.filterGearPressed,
+            pressed && outlineBorderPressed,
           ]}
         >
           <Image
@@ -83,22 +107,33 @@ export function CandidateSwipeScreen(_props: CandidateSwipeScreenProps) {
       </View>
 
       {!empty ? (
-        <View
-          style={[
-            styles.stackArea,
-            { paddingBottom: Math.max(insets.bottom, 14) },
-          ]}
-        >
+        <View style={[styles.stackArea, { paddingTop: CARD_TOP_GAP }]}>
           {next ? (
-            <View style={styles.behindWrap} pointerEvents="none">
+            <View
+              pointerEvents="none"
+              style={[
+                styles.behindWrap,
+                {
+                  height: cardLayout.cardHeight,
+                  bottom: cardLayout.cardBottomInset,
+                },
+              ]}
+            >
               <View style={styles.miniCard}>
                 <Text style={styles.behindName}>{next.displayName}</Text>
-                <Text style={styles.behindHeadline}>{next.headline}</Text>
               </View>
             </View>
           ) : null}
 
-          <View style={styles.foreground}>
+          <View
+            style={[
+              styles.foreground,
+              {
+                height: cardLayout.cardHeight,
+                marginBottom: cardLayout.cardBottomInset,
+              },
+            ]}
+          >
             <CandidateSwipeCard
               key={current.id}
               candidate={current}
@@ -126,8 +161,6 @@ export function CandidateSwipeScreen(_props: CandidateSwipeScreenProps) {
   );
 }
 
-const FILTER_HEADER_BTN_H = 44;
-
 const styles = StyleSheet.create({
   root: {
     flex: 1,
@@ -138,17 +171,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    marginBottom: 14,
+    marginBottom: 10,
   },
   filterGearBtn: {
     width: FILTER_HEADER_BTN_H,
     height: FILTER_HEADER_BTN_H,
-    borderRadius: 14,
+    borderRadius: outlineRadius,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    ...outlineBorder,
   },
   filterGearPressed: {
     backgroundColor: colors.surfaceMuted,
@@ -168,16 +200,12 @@ const styles = StyleSheet.create({
     height: FILTER_HEADER_BTN_H,
     paddingVertical: 0,
     paddingHorizontal: 10,
-    borderRadius: 14,
+    borderRadius: outlineRadius,
     backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     justifyContent: "center",
+    ...outlineBorder,
   },
-  filterBlockPressed: {
-    backgroundColor: colors.surface,
-    borderColor: "rgba(255,255,255,0.22)",
-  },
+  filterBlockPressed: outlineBorderPressed,
   filterBlockCaption: {
     fontSize: 9,
     fontWeight: "700",
@@ -207,42 +235,30 @@ const styles = StyleSheet.create({
   },
   stackArea: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    alignSelf: "stretch",
   },
   behindWrap: {
     position: "absolute",
-    top: "8%",
-    left: 14,
-    right: 14,
+    left: 0,
+    right: 0,
     zIndex: 0,
-    opacity: 0.72,
-    transform: [{ scale: 0.9 }],
+    opacity: 0.55,
+    transform: [{ scale: 0.96 }],
   },
   miniCard: {
-    borderRadius: 22,
-    padding: 20,
-    minHeight: 120,
+    flex: 1,
+    padding: 22,
     backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    ...outlineBlock(outlineRadius),
   },
   behindName: {
     fontSize: 18,
     fontWeight: "700",
     color: colors.textPrimary,
-    marginBottom: 6,
-  },
-  behindHeadline: {
-    fontSize: 14,
-    color: colors.textMuted,
   },
   foreground: {
     width: "100%",
-    justifyContent: "center",
-    alignItems: "center",
     zIndex: 1,
-    flexGrow: 1,
   },
   empty: {
     flex: 1,

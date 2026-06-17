@@ -16,9 +16,10 @@ const TAB_RASTER_SCALE = 1.12;
 type Props = {
   route: keyof MainTabParamList;
   size: number;
+  tintColor?: string;
 };
 
-function tintedRaster(source: number, px: number) {
+function tintedRaster(source: number, px: number, tintColor: string) {
   return (
     <Image
       accessibilityIgnoresInvertColors
@@ -27,24 +28,24 @@ function tintedRaster(source: number, px: number) {
       style={{
         width: px,
         height: px,
-        tintColor: colors.textPrimary,
+        tintColor,
       }}
     />
   );
 }
 
 /** Иконка таба FAB: растр марки ленты, чаты и профиль — из PNG. */
-export function FabRouteGlyph({ route, size }: Props) {
+export function FabRouteGlyph({ route, size, tintColor = colors.textPrimary }: Props) {
   if (route === 'CandidateSwipe') {
     const px = Math.round(size * LOGO_RELATIVE_SCALE);
-    return tintedRaster(FIND_LOGO, px);
+    return tintedRaster(FIND_LOGO, px, tintColor);
   }
 
   if (route === 'Chats') {
     const px = Math.round(size * TAB_RASTER_SCALE);
-    return tintedRaster(CHATS_ICON, px);
+    return tintedRaster(CHATS_ICON, px, tintColor);
   }
 
   const px = Math.round(size * TAB_RASTER_SCALE);
-  return tintedRaster(PROFILE_ICON, px);
+  return tintedRaster(PROFILE_ICON, px, tintColor);
 }

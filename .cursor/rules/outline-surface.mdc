@@ -1,0 +1,46 @@
+---
+description: Единый outline-стиль рамок, кнопок и карточек FindIT
+globs: **/*.{ts,tsx}
+alwaysApply: true
+---
+
+# Outline-surface (единая рамка)
+
+Все bordered UI-элементы (кнопки, инпуты, карточки, чипы, фильтры) используют **один источник** — `theme/surface/`.
+
+## Импорт
+
+```typescript
+import {
+  outlineBorder,
+  outlineBorderPressed,
+  outlineBorderFocused,
+  outlineBlock,
+  outlineRadius,
+  outlineSurface,
+} from '../theme/surface';
+import { OutlineButton } from '../components/ui/OutlineButton';
+```
+
+## Запрещено
+
+- Хардкодить `borderColor: 'rgba(255, 255, 255, 0.22)'` и `colors.borderSubtle` для видимых рамок UI
+- Дублировать стили кнопок Welcome в экранах — использовать `OutlineButton` или `outlineSurface()`
+
+## Когда что использовать
+
+| Элемент | API |
+|---------|-----|
+| CTA-кнопка | `OutlineButton` |
+| Инпут / pressable | `outlineSurface(radius)` + `outlineBorderFocused` при focus |
+| Карточка / блок списка | `outlineBlock(radius)` |
+| Pressable с рамкой | `outlineBorder` + `outlineBorderPressed` |
+
+## Токены (канон)
+
+- `outlineBorderColor`: `rgba(255, 255, 255, 0.22)`
+- `outlineBorderColorPressed`: `rgba(255, 255, 255, 0.4)`
+- `outlineBorderColorFocused`: `colors.accentBright`
+- `outlineRadius`: `4` (по умолчанию)
+
+Радиус можно увеличивать локально (`outlineBlock(14)`), но **цвет и толщина рамки** — только из `theme/surface`.

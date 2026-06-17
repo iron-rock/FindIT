@@ -19,6 +19,7 @@ export type RegisterFieldKey =
   | 'aiTools'
   | 'github'
   | 'company'
+  | 'companyLink'
   | 'industry'
   | 'contact';
 
@@ -37,7 +38,7 @@ export type RegisterStepKind = 'form' | 'verify' | 'highlights';
 export type RegisterStepDef = {
   id: string;
   kind?: RegisterStepKind;
-  titleKey: I18nKey;
+  titleKey?: I18nKey;
   hintKey?: I18nKey;
   fields: RegisterFieldDef[];
   skippable: boolean;
@@ -61,13 +62,6 @@ const VERIFY_STEP: RegisterStepDef = {
   skippable: false,
 };
 
-const AI_NOTES_FIELD: RegisterFieldDef = {
-  key: 'aiTools',
-  labelKey: 'register.finder.aiToolsNotes',
-  placeholderKey: 'register.finder.aiToolsPh',
-  multiline: true,
-};
-
 const GITHUB_FIELD: RegisterFieldDef = {
   key: 'github',
   labelKey: 'register.finder.github',
@@ -81,15 +75,42 @@ export const FINDER_REGISTER_STEPS: RegisterStepDef[] = [
   {
     id: 'highlights',
     kind: 'highlights',
-    titleKey: 'register.finder.aiTitle',
-    hintKey: 'register.finder.aiHint',
     skippable: false,
-    fields: [AI_NOTES_FIELD, GITHUB_FIELD],
+    fields: [GITHUB_FIELD],
   },
 ];
 
-/** Регистрация recruiter: только подтверждение телефона, дальше — профиль. */
-export const RECRUITER_REGISTER_STEPS: RegisterStepDef[] = [VERIFY_STEP];
+const CORP_EMAIL_FIELD: RegisterFieldDef = {
+  key: 'email',
+  labelKey: 'register.recruiter.corpEmail',
+  placeholderKey: 'register.recruiter.corpEmailPh',
+  keyboardType: 'email-address',
+  autoCapitalize: 'none',
+};
+
+const COMPANY_NAME_FIELD: RegisterFieldDef = {
+  key: 'company',
+  labelKey: 'register.recruiter.company',
+  placeholderKey: 'register.recruiter.companyPh',
+  autoCapitalize: 'words',
+};
+
+const COMPANY_LINK_FIELD: RegisterFieldDef = {
+  key: 'companyLink',
+  labelKey: 'register.recruiter.companyLink',
+  placeholderKey: 'register.recruiter.companyLinkPh',
+  autoCapitalize: 'none',
+};
+
+/** Регистрация recruiter: подтверждение телефона → данные компании. */
+export const RECRUITER_REGISTER_STEPS: RegisterStepDef[] = [
+  VERIFY_STEP,
+  {
+    id: 'company',
+    skippable: false,
+    fields: [CORP_EMAIL_FIELD, COMPANY_NAME_FIELD, COMPANY_LINK_FIELD],
+  },
+];
 
 export const REGISTER_STEPS_BY_ROLE: Record<UserRole, RegisterStepDef[]> = {
   finder: FINDER_REGISTER_STEPS,
@@ -115,6 +136,7 @@ export const EMPTY_REGISTER_FORM: RegisterFormState = {
   aiTools: '',
   github: '',
   company: '',
+  companyLink: '',
   industry: '',
   contact: '',
 };

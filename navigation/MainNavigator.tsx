@@ -1,7 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { ExpandableFabTabBar } from '../components/navigation/ExpandableFabTabBar';
+import { MainTabBar } from '../components/navigation/MainTabBar';
 import { CandidateSwipeScreen } from '../screens/CandidateSwipeScreen';
 import { ChatsScreen } from '../screens/ChatsScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
@@ -20,7 +20,7 @@ export function MainNavigator({ route }: MainNavigatorProps) {
     <MainSessionProvider value={{ role, greetingTitle, greetingSubtitle }}>
       <Tab.Navigator
         initialRouteName="CandidateSwipe"
-        tabBar={(props) => <ExpandableFabTabBar {...props} />}
+        tabBar={(props) => <MainTabBar {...props} />}
         screenOptions={{
           headerShown: false,
           sceneStyle: {

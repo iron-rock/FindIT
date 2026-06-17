@@ -4,7 +4,11 @@ import { useTranslation } from "react-i18next";
 
 import type { UserRole } from "../../navigation/types";
 import { colors, font, Text } from "../../theme";
-import { glassAuthRadius } from "../ui/GlassSurface";
+import {
+  outlineBorderPressed,
+  outlineRadius,
+  outlineSurface,
+} from "../../theme/surface";
 
 type RoleCheckboxesProps = {
   role: UserRole | null;
@@ -79,11 +83,11 @@ function RoleCheckbox({
         <View
           style={[
             styles.card,
+            outlineSurface(outlineRadius),
             row && styles.cardRow,
             compact && styles.cardCompact,
-            { borderRadius: glassAuthRadius },
             selected && styles.cardSelected,
-            pressed && styles.cardPressed,
+            pressed && outlineBorderPressed,
           ]}
         >
           <View style={[styles.box, selected && styles.boxSelected]}>
@@ -135,15 +139,9 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingVertical: 16,
     paddingHorizontal: 16,
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.22)",
   },
   cardSelected: {
     borderColor: "rgba(255, 255, 255, 0.9)",
-  },
-  cardPressed: {
-    borderColor: "rgba(255, 255, 255, 0.4)",
   },
   cardRow: {
     flexDirection: "row",
