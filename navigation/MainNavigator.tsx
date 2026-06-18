@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -6,18 +7,28 @@ import { CandidateSwipeScreen } from '../screens/CandidateSwipeScreen';
 import { ChatsScreen } from '../screens/ChatsScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { colors } from '../theme/colors';
-import { MainSessionProvider } from './MainSessionContext';
+import { MainSessionProvider, useMainSession } from './MainSessionContext';
+import { registerMainSessionRoleSwitcher } from './mainSessionBridge';
 import type { MainTabParamList, RootStackParamList } from './types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export type MainNavigatorProps = NativeStackScreenProps<RootStackParamList, 'Main'>;
 
+function MainSessionBridge() {
+  const { setRole } = useMainSession();
+
+  useEffect(() => registerMainSessionRoleSwitcher(setRole), [setRole]);
+
+  return null;
+}
+
 export function MainNavigator({ route }: MainNavigatorProps) {
-  const { role, greetingTitle, greetingSubtitle } = route.params;
+  const { role, profile } = route.params;
 
   return (
-    <MainSessionProvider value={{ role, greetingTitle, greetingSubtitle }}>
+    <MainSessionProvider initialRole={role} initialProfile={profile}>
+      <MainSessionBridge />
       <Tab.Navigator
         initialRouteName="CandidateSwipe"
         tabBar={(props) => <MainTabBar {...props} />}

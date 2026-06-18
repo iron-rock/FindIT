@@ -14,7 +14,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
-import { devSignIn, devSignOut, readAccountRole, setAccountRole } from '../../lib/devAuth';
+import { devSignIn, readAccountRole, setAccountRole } from '../../lib/devAuth';
+import { requestMainSessionRoleSwitch } from '../../navigation/mainSessionBridge';
+import { resetToWelcome } from '../../navigation/rootNavigation';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { colors } from '../../theme/colors';
 
@@ -25,7 +27,7 @@ const ACTIONS_WIDTH = 34 * 2 + 6 + ACTIONS_SIDE_PADDING * 2;
 const CORNER_MARGIN = 8;
 const DRAG_THRESHOLD = 6;
 
-type DevAction = 'finder' | 'recruiter' | 'login' | 'logout' | null;
+type DevAction = 'finder' | 'recruiter' | 'login' | null;
 type PanelCorner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
 function isLeftCorner(corner: PanelCorner): boolean {
@@ -279,7 +281,10 @@ export function DevPanel() {
             accessibilityLabel="Роль finder"
             onPress={() =>
               runAction('finder', async () => {
-                await setAccountRole('finder');
+                requestMainSessionRoleSwitch('finder');
+                if (user) {
+                  await setAccountRole('finder');
+                }
               })
             }
           />
@@ -290,7 +295,10 @@ export function DevPanel() {
             accessibilityLabel="Роль recruiter"
             onPress={() =>
               runAction('recruiter', async () => {
-                await setAccountRole('recruiter');
+                requestMainSessionRoleSwitch('recruiter');
+                if (user) {
+                  await setAccountRole('recruiter');
+                }
               })
             }
           />
@@ -309,9 +317,12 @@ export function DevPanel() {
           />
           <DevIconButton
             icon="log-out-outline"
-            disabled={busyAction !== null || !user}
+            disabled={busyAction !== null}
             accessibilityLabel="Выйти"
-            onPress={() => runAction('logout', devSignOut)}
+            onPress={() => {
+              resetToWelcome();
+              setOpen(false);
+            }}
           />
         </View>
       </View>

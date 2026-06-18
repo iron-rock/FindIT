@@ -99,7 +99,7 @@ export const en = {
       aiToolsCatalog: {
         cursor: "Cursor",
         githubCopilot: "GitHub Copilot",
-        codex: "OpenAI Codex",
+        codex: "Codex",
         claude: "Claude Code",
         gemini: "Gemini",
         windsurf: "Windsurf",
@@ -136,6 +136,22 @@ export const en = {
     greeting: "Hi, {{name}}!",
     cardHint:
       "A multi-step profile, settings and favorites will appear here once the database is connected.",
+    aiTools: "AI tools",
+    gitlab: "GitLab",
+    stack: "Tech stack",
+    position: "Desired position",
+    salary: "Salary expectations",
+    workFormat: "Work format",
+    experience: "Experience",
+    yearsExperience: "{{count}} years of experience",
+    yearsExperience_one: "{{count}} year of experience",
+    present: "Present",
+    emptyField: "Not filled in",
+    addField: "Add…",
+    contactPerson: "Contact person",
+    corpEmail: "Work email",
+    companyLink: "Website",
+    industry: "Industry",
   },
   chats: {
     title: "Chats",
@@ -151,10 +167,15 @@ export const en = {
     emptyTitle: "Today's feed is over",
     emptyText:
       "You can go through the available profiles again — once the database is connected, the list will load from there.",
+    emptyVacanciesTitle: "No more vacancies today",
+    emptyVacanciesText:
+      "You can browse the available vacancies again — once the database is connected, the list will load from there.",
     restart: "Show again",
   },
   tabs: {
     feed: "Profile feed",
+    feedVacancies: "Vacancies",
+    feedCandidates: "Candidates",
     chats: "Chats",
     profile: "Profile",
     closeMenu: "Close menu",

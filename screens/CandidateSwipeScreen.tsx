@@ -1,11 +1,14 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Image, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { CandidateSwipeCard } from "../components/swipe/CandidateSwipeCard";
+import { VacancySwipeCard } from "../components/swipe/VacancySwipeCard";
 import { candidateAnkety } from "../data/candidateAnkety";
+import { vacancies } from "../data/vacancies";
+import { useMainSession } from "../navigation/MainSessionContext";
 import type { MainTabParamList } from "../navigation/types";
 import { colors, Text } from "../theme";
 import {
@@ -19,7 +22,6 @@ const FILTERS_ICON = require("../assets/settings-v2.png");
 const FILTER_HEADER_BTN_H = 44;
 const FILTER_MARGIN_BOTTOM = 10;
 const CARD_TOP_GAP = 10;
-/** Как было: ~62% экрана, карточка по центру стека. */
 const LEGACY_CARD_HEIGHT_RATIO = 0.62;
 
 export type CandidateSwipeScreenProps = BottomTabScreenProps<
@@ -30,18 +32,28 @@ export type CandidateSwipeScreenProps = BottomTabScreenProps<
 export function CandidateSwipeScreen(_props: CandidateSwipeScreenProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { role } = useMainSession();
   const [index, setIndex] = useState(0);
 
-  const current = candidateAnkety[index];
-  const next = candidateAnkety[index + 1];
+  const isFinder = role === "finder";
+  const deckLength = isFinder ? vacancies.length : candidateAnkety.length;
+
+  useEffect(() => {
+    setIndex(0);
+  }, [role]);
+
+  const currentCandidate = !isFinder ? candidateAnkety[index] : undefined;
+  const nextCandidate = !isFinder ? candidateAnkety[index + 1] : undefined;
+  const currentVacancy = isFinder ? vacancies[index] : undefined;
+  const nextVacancy = isFinder ? vacancies[index + 1] : undefined;
 
   const advance = useCallback(() => {
-    setIndex((i) => Math.min(i + 1, candidateAnkety.length));
-  }, []);
+    setIndex((i) => Math.min(i + 1, deckLength));
+  }, [deckLength]);
 
   const rewind = () => setIndex(0);
 
-  const empty = !current;
+  const empty = isFinder ? !currentVacancy : !currentCandidate;
   const topPad = Math.max(insets.top, 10);
   const { height: windowH } = useWindowDimensions();
 
@@ -55,6 +67,10 @@ export function CandidateSwipeScreen(_props: CandidateSwipeScreenProps) {
 
     return { cardHeight, cardBottomInset };
   }, [insets.bottom, topPad, windowH]);
+
+  const behindLabel = isFinder
+    ? nextVacancy?.title
+    : nextCandidate?.displayName;
 
   return (
     <View style={[styles.root, { paddingTop: topPad }]}>
@@ -108,7 +124,7 @@ export function CandidateSwipeScreen(_props: CandidateSwipeScreenProps) {
 
       {!empty ? (
         <View style={[styles.stackArea, { paddingTop: CARD_TOP_GAP }]}>
-          {next ? (
+          {behindLabel ? (
             <View
               pointerEvents="none"
               style={[
@@ -120,7 +136,7 @@ export function CandidateSwipeScreen(_props: CandidateSwipeScreenProps) {
               ]}
             >
               <View style={styles.miniCard}>
-                <Text style={styles.behindName}>{next.displayName}</Text>
+                <Text style={styles.behindName}>{behindLabel}</Text>
               </View>
             </View>
           ) : null}
@@ -134,20 +150,34 @@ export function CandidateSwipeScreen(_props: CandidateSwipeScreenProps) {
               },
             ]}
           >
-            <CandidateSwipeCard
-              key={current.id}
-              candidate={current}
-              onAgree={advance}
-              onDecline={advance}
-            />
+            {isFinder && currentVacancy ? (
+              <VacancySwipeCard
+                key={currentVacancy.id}
+                vacancy={currentVacancy}
+                onAgree={advance}
+                onDecline={advance}
+              />
+            ) : null}
+            {!isFinder && currentCandidate ? (
+              <CandidateSwipeCard
+                key={currentCandidate.id}
+                candidate={currentCandidate}
+                onAgree={advance}
+                onDecline={advance}
+              />
+            ) : null}
           </View>
         </View>
       ) : (
         <View
           style={[styles.empty, { paddingBottom: Math.max(insets.bottom, 24) }]}
         >
-          <Text style={styles.emptyTitle}>{t("swipe.emptyTitle")}</Text>
-          <Text style={styles.emptyText}>{t("swipe.emptyText")}</Text>
+          <Text style={styles.emptyTitle}>
+            {t(isFinder ? "swipe.emptyVacanciesTitle" : "swipe.emptyTitle")}
+          </Text>
+          <Text style={styles.emptyText}>
+            {t(isFinder ? "swipe.emptyVacanciesText" : "swipe.emptyText")}
+          </Text>
           <Pressable
             accessibilityRole="button"
             onPress={rewind}
@@ -220,18 +250,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.textPrimary,
     lineHeight: 14,
-  },
-  screenTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: colors.textPrimary,
-    letterSpacing: -0.5,
-    marginBottom: 4,
-  },
-  screenHint: {
-    fontSize: 14,
-    color: colors.textMuted,
-    marginBottom: 12,
   },
   stackArea: {
     flex: 1,

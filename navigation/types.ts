@@ -1,3 +1,4 @@
+import type { RoleProfile } from '../lib/profileTypes';
 import type { UserRole } from '../lib/roles';
 
 export type { UserRole };
@@ -14,7 +15,6 @@ export type RootStackParamList = {
   Welcome: undefined;
   Main: {
     role: UserRole;
-    greetingTitle: string;
-    greetingSubtitle: string;
+    profile: RoleProfile;
   };
 };

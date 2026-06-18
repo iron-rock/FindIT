@@ -138,6 +138,22 @@ export const ru: TranslationResources = {
     greeting: "Привет, {{name}}!",
     cardHint:
       "Многошаговая анкета, настройки и избранное появятся здесь после подключения базы данных.",
+    aiTools: "ИИ-инструменты",
+    gitlab: "GitLab",
+    stack: "Стек",
+    position: "Желаемая позиция",
+    salary: "Зарплатные ожидания",
+    workFormat: "Формат работы",
+    experience: "Опыт",
+    yearsExperience: "{{count}} лет опыта",
+    yearsExperience_one: "{{count}} год опыта",
+    present: "н.в.",
+    emptyField: "Не заполнено",
+    addField: "Добавить…",
+    contactPerson: "Контактное лицо",
+    corpEmail: "Корпоративная почта",
+    companyLink: "Сайт",
+    industry: "Индустрия",
   },
   chats: {
     title: "Чаты",
@@ -153,10 +169,15 @@ export const ru: TranslationResources = {
     emptyTitle: "Лента на сегодня закончилась",
     emptyText:
       "Можно снова пройти доступные анкеты — когда подключится база, список подтянётся оттуда.",
+    emptyVacanciesTitle: "Вакансии на сегодня закончились",
+    emptyVacanciesText:
+      "Можно снова пройти доступные вакансии — когда подключится база, список подтянётся оттуда.",
     restart: "Показать снова",
   },
   tabs: {
     feed: "Лента анкет",
+    feedVacancies: "Вакансии",
+    feedCandidates: "Анкеты",
     chats: "Чаты",
     profile: "Профиль",
     closeMenu: "Закрыть меню",

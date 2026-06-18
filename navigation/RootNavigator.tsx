@@ -2,6 +2,7 @@ import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { MainNavigator } from './MainNavigator';
+import { navigationRef } from './rootNavigation';
 
 import { WelcomeScreen } from '../screens/WelcomeScreen';
 import { colors, fontFamily } from '../theme';
@@ -24,7 +25,7 @@ const navTheme = {
 
 export function RootNavigator() {
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer ref={navigationRef} theme={navTheme}>
       <Stack.Navigator
         initialRouteName="Welcome"
         screenOptions={{

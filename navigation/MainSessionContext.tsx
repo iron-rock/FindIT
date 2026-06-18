@@ -1,23 +1,40 @@
 import type { ReactNode } from 'react';
-import { createContext, useContext } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
-import type { UserRole } from './types';
+import { getTemplateProfile } from '../data/templateAccounts';
+import type { RoleProfile } from '../lib/profileTypes';
+import type { UserRole } from '../lib/roles';
 
 export type MainSession = {
   role: UserRole;
-  greetingTitle: string;
-  greetingSubtitle: string;
+  profile: RoleProfile;
+  setRole: (role: UserRole) => void;
 };
 
 const MainSessionContext = createContext<MainSession | null>(null);
 
 export function MainSessionProvider({
-  value,
+  initialRole,
+  initialProfile,
   children,
 }: {
-  value: MainSession;
+  initialRole: UserRole;
+  initialProfile: RoleProfile;
   children: ReactNode;
 }) {
+  const [role, setRoleState] = useState<UserRole>(initialRole);
+  const [profile, setProfile] = useState<RoleProfile>(initialProfile);
+
+  const setRole = useCallback((nextRole: UserRole) => {
+    setRoleState(nextRole);
+    setProfile(getTemplateProfile(nextRole));
+  }, []);
+
+  const value = useMemo(
+    () => ({ role, profile, setRole }),
+    [role, profile, setRole],
+  );
+
   return <MainSessionContext.Provider value={value}>{children}</MainSessionContext.Provider>;
 }
 

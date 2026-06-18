@@ -1,25 +1,31 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { FinderProfileBody } from '../components/profile/FinderProfileBody';
+import { ProfileAvatar } from '../components/profile/ProfileAvatar';
+import { RecruiterProfileBody } from '../components/profile/RecruiterProfileBody';
+import { OutlineButton } from '../components/ui/OutlineButton';
+import { isFinderProfile, isRecruiterProfile, profileDisplayName } from '../lib/profileTypes';
 import { useMainSession } from '../navigation/MainSessionContext';
 import type { MainTabParamList, RootStackParamList } from '../navigation/types';
 import { colors, Text } from '../theme';
-import {
-  outlineBlock,
-  outlineBorder,
-  outlineBorderPressed,
-  outlineFill,
-  outlineRadius,
-} from '../theme/surface';
 
 export type ProfileScreenProps = BottomTabScreenProps<MainTabParamList, 'Profile'>;
 
 export function ProfileScreen({ navigation }: ProfileScreenProps) {
   const { t } = useTranslation();
-  const { role, greetingTitle, greetingSubtitle } = useMainSession();
-  const roleLabel = t(`roles.${role}`);
+  const insets = useSafeAreaInsets();
+  const { profile } = useMainSession();
+  const displayName = profileDisplayName(profile);
+  const subtitle = isFinderProfile(profile)
+    ? profile.headline
+    : isRecruiterProfile(profile)
+      ? profile.industry
+      : undefined;
+  const topPad = Math.max(insets.top, 10) + 16;
 
   const signOut = () => {
     const parent = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
@@ -27,27 +33,40 @@ export function ProfileScreen({ navigation }: ProfileScreenProps) {
   };
 
   return (
-    <View style={styles.root}>
-      <Text style={styles.title}>{t('profile.title')}</Text>
-      <Text style={styles.subtitle}>{greetingSubtitle}</Text>
-
-      <View style={styles.card}>
-        <Text style={styles.badge}>{roleLabel}</Text>
-        <Text style={styles.primary}>{greetingTitle}</Text>
-        <Text style={styles.secondary}>{t('profile.cardHint')}</Text>
+    <ScrollView
+      style={styles.root}
+      contentContainerStyle={[
+        styles.content,
+        { paddingTop: topPad, paddingBottom: 140 },
+      ]}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.header}>
+        <View style={styles.headerText}>
+          <Text style={styles.name} numberOfLines={2}>
+            {displayName}
+          </Text>
+          {subtitle ? (
+            <Text style={styles.subtitle} numberOfLines={2}>
+              {subtitle}
+            </Text>
+          ) : null}
+        </View>
+        <ProfileAvatar name={displayName} size={84} />
       </View>
 
-      <Pressable
-        accessibilityRole="button"
-        style={({ pressed }) => [
-          styles.outline,
-          pressed && outlineBorderPressed,
-        ]}
+      {isFinderProfile(profile) ? (
+        <FinderProfileBody profile={profile} />
+      ) : (
+        <RecruiterProfileBody profile={profile} />
+      )}
+
+      <OutlineButton
+        title={t('common.signOut')}
         onPress={signOut}
-      >
-        <Text style={styles.outlineLabel}>{t('common.signOut')}</Text>
-      </Pressable>
-    </View>
+        style={styles.signOut}
+      />
+    </ScrollView>
   );
 }
 
@@ -55,66 +74,34 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 140,
   },
-  title: {
+  content: {
+    paddingHorizontal: 20,
+    gap: 24,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  headerText: {
+    flex: 1,
+    gap: 4,
+  },
+  name: {
     fontSize: 28,
     fontWeight: '700',
     color: colors.textPrimary,
     letterSpacing: -0.5,
-    marginBottom: 6,
+    lineHeight: 34,
   },
   subtitle: {
-    fontSize: 15,
-    color: colors.textMuted,
-    marginBottom: 18,
-    lineHeight: 22,
-    maxWidth: 360,
-  },
-  card: {
-    gap: 10,
-    padding: 22,
-    marginBottom: 28,
-    ...outlineBlock(outlineRadius),
-  },
-  badge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    overflow: 'hidden',
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    color: colors.textMuted,
-    backgroundColor: colors.surfaceMuted,
-    ...outlineBorder,
-  },
-  primary: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  secondary: {
-    marginTop: 4,
-    fontSize: 15,
-    color: colors.textMuted,
-    lineHeight: 22,
-  },
-  outline: {
-    alignSelf: 'flex-start',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: outlineRadius,
-    backgroundColor: outlineFill,
-    ...outlineBorder,
-  },
-  outlineLabel: {
     fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
+    color: colors.textMuted,
+    lineHeight: 22,
+  },
+  signOut: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
   },
 });

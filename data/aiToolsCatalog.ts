@@ -10,17 +10,22 @@ export type AiToolCatalogItem = {
 
 export const MAX_SELECTED_AI_TOOLS = 2;
 
-/** Популярные AI-инструменты (белые лого WebP). Порядок = популярность. */
+/** Популярные AI-инструменты (белые лого WebP). Порядок = по алфавиту. */
 export const AI_TOOLS_CATALOG: AiToolCatalogItem[] = [
   {
-    id: 'githubCopilot',
-    nameKey: 'register.finder.aiToolsCatalog.githubCopilot',
-    logo: require('../assets/ai-tools/githubCopilot.webp'),
+    id: 'amazonQ',
+    nameKey: 'register.finder.aiToolsCatalog.amazonQ',
+    logo: require('../assets/ai-tools/amazonQ.webp'),
   },
   {
-    id: 'cursor',
-    nameKey: 'register.finder.aiToolsCatalog.cursor',
-    logo: require('../assets/ai-tools/cursor.webp'),
+    id: 'antigravity',
+    nameKey: 'register.finder.aiToolsCatalog.antigravity',
+    logo: require('../assets/ai-tools/antigravity.webp'),
+  },
+  {
+    id: 'chatgpt',
+    nameKey: 'register.finder.aiToolsCatalog.chatgpt',
+    logo: require('../assets/ai-tools/chatgpt.webp'),
   },
   {
     id: 'claude',
@@ -33,9 +38,9 @@ export const AI_TOOLS_CATALOG: AiToolCatalogItem[] = [
     logo: require('../assets/ai-tools/codex.webp'),
   },
   {
-    id: 'windsurf',
-    nameKey: 'register.finder.aiToolsCatalog.windsurf',
-    logo: require('../assets/ai-tools/windsurf.webp'),
+    id: 'cursor',
+    nameKey: 'register.finder.aiToolsCatalog.cursor',
+    logo: require('../assets/ai-tools/cursor.webp'),
   },
   {
     id: 'gemini',
@@ -43,9 +48,9 @@ export const AI_TOOLS_CATALOG: AiToolCatalogItem[] = [
     logo: require('../assets/ai-tools/gemini.webp'),
   },
   {
-    id: 'microsoftCopilot',
-    nameKey: 'register.finder.aiToolsCatalog.microsoftCopilot',
-    logo: require('../assets/ai-tools/microsoftCopilot.webp'),
+    id: 'githubCopilot',
+    nameKey: 'register.finder.aiToolsCatalog.githubCopilot',
+    logo: require('../assets/ai-tools/githubCopilot.webp'),
   },
   {
     id: 'jetbrainsAi',
@@ -53,9 +58,9 @@ export const AI_TOOLS_CATALOG: AiToolCatalogItem[] = [
     logo: require('../assets/ai-tools/jetbrainsAi.webp'),
   },
   {
-    id: 'antigravity',
-    nameKey: 'register.finder.aiToolsCatalog.antigravity',
-    logo: require('../assets/ai-tools/antigravity.webp'),
+    id: 'microsoftCopilot',
+    nameKey: 'register.finder.aiToolsCatalog.microsoftCopilot',
+    logo: require('../assets/ai-tools/microsoftCopilot.webp'),
   },
   {
     id: 'replit',
@@ -63,14 +68,9 @@ export const AI_TOOLS_CATALOG: AiToolCatalogItem[] = [
     logo: require('../assets/ai-tools/replit.webp'),
   },
   {
-    id: 'amazonQ',
-    nameKey: 'register.finder.aiToolsCatalog.amazonQ',
-    logo: require('../assets/ai-tools/amazonQ.webp'),
-  },
-  {
-    id: 'chatgpt',
-    nameKey: 'register.finder.aiToolsCatalog.chatgpt',
-    logo: require('../assets/ai-tools/chatgpt.webp'),
+    id: 'windsurf',
+    nameKey: 'register.finder.aiToolsCatalog.windsurf',
+    logo: require('../assets/ai-tools/windsurf.webp'),
   },
 ];
 

@@ -29,7 +29,11 @@ import { GradientBackground } from "../components/background/GradientBackground"
 import { MovingShadowOverlay } from "../components/background/MovingShadowOverlay";
 import { OutlineButton } from "../components/ui/OutlineButton";
 import { registerPresetsByRole } from "../data/registerPresets";
-import { formatSelectedAiTools } from "../data/aiToolsCatalog";
+import {
+  buildProfileFromRegistration,
+  getTemplateFormPrefill,
+  getTemplateProfile,
+} from "../data/templateAccounts";
 import {
   EMPTY_REGISTER_FORM,
   REGISTER_DOTS_PLACEHOLDER,
@@ -313,8 +317,10 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
 
   const chooseRole = (next: UserRole) => {
     const preset = registerPresetsByRole[next];
+    const templatePrefill = getTemplateFormPrefill(next);
     setForm((prev) => ({
       ...prev,
+      ...templatePrefill,
       phone: prev.phone || preset.phone,
       phoneCountry: prev.phoneCountry || preset.phoneCountry,
       password: prev.password || preset.password,
@@ -326,28 +332,17 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
     if (!role) {
       return;
     }
-    const fallback = t(`roles.${role}`);
-    const phoneLabel = formatPhoneDisplay(form.phone, getPhoneCountry(form));
-    const selectedToolsLabel = formatSelectedAiTools(form.selectedAiTools, t);
-    const subtitleParts =
-      role === "finder"
-        ? [selectedToolsLabel, form.github.trim(), phoneLabel].filter(Boolean)
-        : [form.company.trim(), form.email.trim(), phoneLabel].filter(Boolean);
 
     navigation.replace("Main", {
       role,
-      greetingTitle: fallback,
-      greetingSubtitle: subtitleParts.join(" · ") || fallback,
+      profile: buildProfileFromRegistration(role, form),
     });
   };
 
   const completeLogin = () => {
     navigation.replace("Main", {
       role: "finder",
-      greetingTitle: t("profile.greeting", { name: t("roles.finder") }),
-      greetingSubtitle:
-        formatPhoneDisplay(form.phone, getPhoneCountry(form)) ||
-        t("roles.finder"),
+      profile: getTemplateProfile("finder"),
     });
   };
 
