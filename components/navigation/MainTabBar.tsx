@@ -28,7 +28,6 @@ const TAB_ICON_SIZE: Record<TabName, number> = {
   Profile: 29,
 };
 
-const TAB_BAR_BORDER = "rgba(255, 255, 255, 0.4)";
 const BAR_PAD = 7;
 const TAB_WIDTH = 68;
 const TAB_HEIGHT = 48;
@@ -174,7 +173,7 @@ export function MainTabBar({ state, navigation }: BottomTabBarProps) {
       >
         <GlassSurface
           radius={outlineRadiusPill}
-          borderColor={TAB_BAR_BORDER}
+          borderless
           style={styles.barGlass}
         >
           <View style={styles.track} {...panResponder.panHandlers}>

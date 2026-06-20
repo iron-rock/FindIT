@@ -73,7 +73,7 @@ export function ProfileScreen({ navigation }: ProfileScreenProps) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceDeep,
   },
   content: {
     paddingHorizontal: 20,

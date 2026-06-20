@@ -35,7 +35,7 @@ export function MainNavigator({ route }: MainNavigatorProps) {
         screenOptions={{
           headerShown: false,
           sceneStyle: {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surfaceDeep,
           },
         }}
       >

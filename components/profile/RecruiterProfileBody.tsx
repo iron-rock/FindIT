@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 
 import type { RecruiterProfile } from '../../lib/profileTypes';
 import { colors, Text } from '../../theme';
-import { outlineBlock, outlineRadius } from '../../theme/surface';
 import { ProfileFieldRow } from './ProfileFieldRow';
 
 type RecruiterProfileBodyProps = {
@@ -44,7 +43,5 @@ const styles = StyleSheet.create({
   },
   fieldsBlock: {
     gap: 14,
-    padding: 16,
-    ...outlineBlock(outlineRadius),
   },
 });

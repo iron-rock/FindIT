@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { colors, Text } from '../../theme';
-import { outlineBlock, outlineRadius } from '../../theme/surface';
+import { outlineBorder, outlineRadius } from '../../theme/surface';
 
 type ProfileFieldRowProps = {
   label: string;
@@ -69,8 +69,6 @@ const styles = StyleSheet.create({
   },
   sectionBody: {
     gap: 8,
-    padding: 16,
-    ...outlineBlock(outlineRadius),
   },
   row: {
     gap: 4,
@@ -95,11 +93,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderRadius: outlineRadius,
     backgroundColor: colors.surfaceMuted,
-    ...outlineBlock(outlineRadius),
+    ...outlineBorder,
   },
   tagText: {
     fontSize: 14,

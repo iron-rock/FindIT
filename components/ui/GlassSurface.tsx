@@ -52,6 +52,8 @@ type GlassSurfaceProps = {
   highlight?: boolean;
   /** Переопределение цвета рамки (например белая на tab bar). */
   borderColor?: string;
+  /** Без outline-рамки (tab bar, full-bleed строки списка). */
+  borderless?: boolean;
   onLayout?: (event: LayoutChangeEvent) => void;
 };
 
@@ -70,12 +72,13 @@ export function GlassSurface({
   pressed = false,
   highlight = false,
   borderColor,
+  borderless = false,
   onLayout,
 }: GlassSurfaceProps) {
   const ringColor =
     borderColor ?? (highlight ? outlineBorderColorFocused : outlineBorderColor);
 
-  const ring = (
+  const ring = borderless ? null : (
     <View
       pointerEvents="none"
       style={[

@@ -66,3 +66,16 @@ export function outlineBlock(
     ...extra,
   };
 }
+
+/** Заливка секции без outline-рамки (профиль и т.п.). */
+export function sectionFill(
+  radius: number = outlineRadius,
+  extra?: ViewStyle,
+): ViewStyle {
+  return {
+    borderRadius: radius,
+    backgroundColor: colors.surface,
+    overflow: 'hidden',
+    ...extra,
+  };
+}

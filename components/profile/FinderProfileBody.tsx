@@ -6,12 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { AI_TOOLS_CATALOG } from '../../data/aiToolsCatalog';
 import type { FinderProfile } from '../../lib/profileTypes';
 import { colors, Text } from '../../theme';
-import {
-  outlineBlock,
-  outlineBorder,
-  outlineBorderPressed,
-  outlineRadius,
-} from '../../theme/surface';
+import { outlineBorder, outlineBorderPressed, outlineRadius } from '../../theme/surface';
 import { ExperienceTimeline } from './ExperienceTimeline';
 import {
   ProfileFieldRow,
@@ -135,7 +130,5 @@ const styles = StyleSheet.create({
   },
   fieldsBlock: {
     gap: 14,
-    padding: 16,
-    ...outlineBlock(outlineRadius),
   },
 });

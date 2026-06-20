@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 
 import type { WorkExperience } from '../../lib/profileTypes';
 import { colors, Text } from '../../theme';
-import { outlineBlock, outlineRadius } from '../../theme/surface';
 import { ProfileAvatar } from './ProfileAvatar';
 
 type ExperienceTimelineProps = {
@@ -68,8 +67,6 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: 0,
-    ...outlineBlock(outlineRadius),
-    overflow: 'hidden',
   },
   item: {
     flexDirection: 'row',

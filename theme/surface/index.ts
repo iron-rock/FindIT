@@ -13,4 +13,5 @@ export {
   outlineRadiusPill,
   outlineRadiusTab,
   outlineSurface,
+  sectionFill,
 } from './outline';

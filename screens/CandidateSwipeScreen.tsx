@@ -194,7 +194,7 @@ export function CandidateSwipeScreen(_props: CandidateSwipeScreenProps) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceDeep,
     paddingHorizontal: 14,
   },
   filterHeaderRow: {
