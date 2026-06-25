@@ -23,6 +23,11 @@ export const outlineBorderColor = 'rgba(255, 255, 255, 0.22)';
 export const outlineBorderColorPressed = 'rgba(255, 255, 255, 0.4)';
 export const outlineBorderColorFocused = colors.accentBright;
 
+/** Welcome: полностью белые рамки (default / pressed / focused). */
+export const welcomeOutlineBorderColor = colors.textPrimary;
+export const welcomeOutlineBorderColorPressed = colors.textPrimary;
+export const welcomeOutlineBorderColorFocused = colors.textPrimary;
+
 export const outlineFill = 'transparent';
 
 export const outlineBorder: ViewStyle = {
@@ -30,13 +35,27 @@ export const outlineBorder: ViewStyle = {
   borderColor: outlineBorderColor,
 };
 
+export const welcomeOutlineBorder: ViewStyle = {
+  borderWidth: outlineBorderWidth,
+  borderColor: welcomeOutlineBorderColor,
+};
+
 export const outlineBorderPressed: ViewStyle = {
   borderColor: outlineBorderColorPressed,
+};
+
+export const welcomeOutlineBorderPressed: ViewStyle = {
+  borderColor: welcomeOutlineBorderColorPressed,
 };
 
 export const outlineBorderFocused: ViewStyle = {
   borderWidth: outlineBorderWidthFocused,
   borderColor: outlineBorderColorFocused,
+};
+
+export const welcomeOutlineBorderFocused: ViewStyle = {
+  borderWidth: outlineBorderWidthFocused,
+  borderColor: welcomeOutlineBorderColorFocused,
 };
 
 /** Базовая outline-поверхность (кнопка, инпут). */
@@ -46,6 +65,20 @@ export function outlineSurface(
 ): ViewStyle {
   return {
     ...outlineBorder,
+    borderRadius: radius,
+    backgroundColor: outlineFill,
+    overflow: 'hidden',
+    ...extra,
+  };
+}
+
+/** Outline-поверхность Welcome — белая рамка во всех состояниях. */
+export function welcomeOutlineSurface(
+  radius: number = outlineRadius,
+  extra?: ViewStyle,
+): ViewStyle {
+  return {
+    ...welcomeOutlineBorder,
     borderRadius: radius,
     backgroundColor: outlineFill,
     overflow: 'hidden',

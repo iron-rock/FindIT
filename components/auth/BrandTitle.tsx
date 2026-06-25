@@ -1,57 +1,82 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from "react-native";
 
-import { playfairFontFamily } from '../../theme';
+import { colors, playfairFontFamily } from "../../theme";
 
-/** Статичное свечение логотипа «FindIT» (без покадровой анимации букв). */
-const GLOW_RADIUS = 8;
-const TITLE_COLOR = 'rgba(255, 255, 255, 1)';
+const WORDMARK = "findit";
 
 type BrandTitleProps = {
   fontSize?: number;
 };
 
 export function BrandTitle({ fontSize = 52 }: BrandTitleProps) {
+  const letterGap = Math.round(fontSize * 0.12);
+  const lockupPadY = Math.round(fontSize * 0.14);
+  const firstLetterInset = Math.round(fontSize * 0.3);
+  const lastLetterInset = Math.round(fontSize * 0.14);
+  const narrowLetterInset = 5;
+  const lineHeight = fontSize * 1.28;
+
   return (
     <View
-      style={styles.row}
+      style={[styles.lockup, { paddingVertical: lockupPadY }]}
       accessibilityRole="header"
-      accessibilityLabel="findIT"
+      accessibilityLabel="findit"
     >
-      <Text
-        allowFontScaling={false}
-        style={[
-          styles.title,
-          {
-            fontSize,
-            color: TITLE_COLOR,
-            fontFamily: playfairFontFamily.semiBoldItalic,
-            textShadowColor: 'rgba(143, 211, 255, 0.75)',
-            textShadowOffset: { width: 0, height: 0 },
-            textShadowRadius: GLOW_RADIUS,
-          },
-        ]}
+      <View
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
+        style={[styles.titleWrap, { gap: letterGap }]}
       >
-        FindIT
-      </Text>
+        {WORDMARK.split("").map((letter, index) => (
+          <View key={`${letter}-${index}`} style={styles.letterCell}>
+            <Text
+              allowFontScaling={false}
+              accessible={false}
+              style={[
+                styles.letter,
+                { fontSize, lineHeight },
+                index === 0 && {
+                  paddingHorizontal: firstLetterInset,
+                  marginHorizontal: -firstLetterInset,
+                },
+                index === WORDMARK.length - 1 && {
+                  paddingRight: lastLetterInset,
+                  marginRight: -lastLetterInset,
+                },
+                letter === "i" && {
+                  paddingHorizontal: narrowLetterInset,
+                  marginHorizontal: -narrowLetterInset,
+                },
+              ]}
+            >
+              {letter}
+            </Text>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    overflow: 'visible',
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    transform: [{ skewX: '-10deg' }],
+  lockup: {
+    alignItems: "center",
+    alignSelf: "center",
+    overflow: "visible",
   },
-  title: {
-    letterSpacing: 0,
+  titleWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "visible",
+  },
+  letterCell: {
+    overflow: "visible",
+    flexShrink: 0,
+  },
+  letter: {
+    color: colors.textPrimary,
+    fontFamily: playfairFontFamily.semiBoldItalic,
     includeFontPadding: false,
-    overflow: 'visible',
-    paddingHorizontal: 15,
-    paddingVertical: 16,
   },
 });

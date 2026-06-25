@@ -159,6 +159,9 @@ export const ru: TranslationResources = {
     title: "Чаты",
     subtitle:
       "Переписки с работодателями появятся здесь после подключения сообщений.",
+    inputPlaceholder: "Сообщение",
+    send: "Отправить",
+    attachPhoto: "Прикрепить фото",
   },
   swipe: {
     filtersA11y: "Фильтры поиска",

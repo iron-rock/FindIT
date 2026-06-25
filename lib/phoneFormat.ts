@@ -43,6 +43,12 @@ export function countryCodeToFlag(code: PhoneCountryCode): string {
     .replace(/./g, (char) => String.fromCodePoint(127397 + char.charCodeAt(0)));
 }
 
+/** Максимум цифр в E.164 (без «+»). */
+const MAX_INTERNATIONAL_DIGITS = 15;
+
+/** Верхняя граница длины отформатированной строки в TextInput. */
+export const PHONE_INPUT_DISPLAY_MAX_LENGTH = 24;
+
 /** Форматирует полный международный номер по мере набора (+7 912 …). */
 export function formatInternationalPhoneInput(raw: string): string {
   const trimmed = raw.trim();
@@ -53,12 +59,41 @@ export function formatInternationalPhoneInput(raw: string): string {
     return '+';
   }
 
-  const digits = raw.replace(/\D/g, '');
+  const digits = raw.replace(/\D/g, '').slice(0, MAX_INTERNATIONAL_DIGITS);
   if (!digits) {
     return trimmed.includes('+') ? '+' : '';
   }
 
-  return new AsYouType().input(`+${digits}`);
+  return formatInternationalDigits(digits);
+}
+
+/**
+ * AsYouType + лимит: после первого валидного номера лишние цифры отбрасываются.
+ * До валидного — набор до 15 цифр E.164.
+ */
+function formatInternationalDigits(digits: string): string {
+  let formatted = new AsYouType().input(`+${digits.charAt(0)}`);
+  let lastValidLength = 0;
+
+  for (let len = 2; len <= digits.length; len += 1) {
+    const formatter = new AsYouType();
+    const candidate = formatter.input(`+${digits.slice(0, len)}`);
+    const number = formatter.getNumber();
+
+    if (number?.isValid()) {
+      lastValidLength = len;
+      formatted = candidate;
+      continue;
+    }
+
+    if (lastValidLength > 0) {
+      break;
+    }
+
+    formatted = candidate;
+  }
+
+  return formatted;
 }
 
 /** Определяет страну по префиксу (+77… → KZ, +79… → RU и т.д.). */

@@ -9,6 +9,7 @@ import {
   outlineRadius,
   outlineSurface,
 } from "../../theme/surface";
+import { useAuthOutline } from "./AuthOutlineContext";
 
 type RoleCheckboxesProps = {
   role: UserRole | null;
@@ -71,6 +72,8 @@ function RoleCheckbox({
   row = false,
   compact = false,
 }: RoleCheckboxProps) {
+  const { selectedBorder } = useAuthOutline();
+
   return (
     <Pressable
       accessibilityRole="checkbox"
@@ -86,6 +89,7 @@ function RoleCheckbox({
             outlineSurface(outlineRadius),
             row && styles.cardRow,
             compact && styles.cardCompact,
+            selected && selectedBorder,
             selected && styles.cardSelected,
             pressed && outlineBorderPressed,
           ]}
@@ -141,7 +145,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   cardSelected: {
-    borderColor: "rgba(255, 255, 255, 0.9)",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
   },
   cardRow: {
     flexDirection: "row",

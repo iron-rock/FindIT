@@ -14,4 +14,11 @@ export {
   outlineRadiusTab,
   outlineSurface,
   sectionFill,
+  welcomeOutlineBorder,
+  welcomeOutlineBorderColor,
+  welcomeOutlineBorderColorFocused,
+  welcomeOutlineBorderColorPressed,
+  welcomeOutlineBorderFocused,
+  welcomeOutlineBorderPressed,
+  welcomeOutlineSurface,
 } from './outline';

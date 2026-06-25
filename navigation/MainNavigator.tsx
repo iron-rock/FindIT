@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { MainTabBar } from '../components/navigation/MainTabBar';
 import { CandidateSwipeScreen } from '../screens/CandidateSwipeScreen';
-import { ChatsScreen } from '../screens/ChatsScreen';
+import { ChatsNavigator } from './ChatsNavigator';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { colors } from '../theme/colors';
 import { MainSessionProvider, useMainSession } from './MainSessionContext';
@@ -40,7 +40,7 @@ export function MainNavigator({ route }: MainNavigatorProps) {
         }}
       >
         <Tab.Screen name="CandidateSwipe" component={CandidateSwipeScreen} />
-        <Tab.Screen name="Chats" component={ChatsScreen} />
+        <Tab.Screen name="Chats" component={ChatsNavigator} />
         <Tab.Screen name="Profile" component={ProfileScreen} />
       </Tab.Navigator>
     </MainSessionProvider>

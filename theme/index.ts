@@ -24,4 +24,8 @@ export {
   outlineRadiusPill,
   outlineRadiusTab,
   outlineSurface,
+  welcomeOutlineBorder,
+  welcomeOutlineBorderFocused,
+  welcomeOutlineBorderPressed,
+  welcomeOutlineSurface,
 } from './surface';

@@ -10,13 +10,8 @@ import {
 } from "react-native";
 
 import { colors, font, Text } from "../../theme";
-import {
-  outlineBorder,
-  outlineBorderFocused,
-  outlineFill,
-  outlineRadius,
-  outlineSurface,
-} from "../../theme/surface";
+import { outlineRadius, outlineSurface } from "../../theme/surface";
+import { useAuthOutline } from "./AuthOutlineContext";
 
 const DEFAULT_LENGTH = 6;
 const BOX_GAP = 10;
@@ -41,6 +36,8 @@ type OtpDigitCellProps = {
 
 /** Одна ячейка OTP с ease-out появлением цифры. */
 function OtpDigitCell({ digit, isActive }: OtpDigitCellProps) {
+  const { fieldBorder } = useAuthOutline();
+  const filled = digit.length > 0;
   const opacity = useRef(new Animated.Value(digit ? 1 : 0)).current;
   const scale = useRef(new Animated.Value(digit ? 1 : 0.88)).current;
   const prevDigit = useRef(digit);
@@ -77,7 +74,7 @@ function OtpDigitCell({ digit, isActive }: OtpDigitCellProps) {
       style={[
         outlineSurface(outlineRadius),
         styles.box,
-        isActive && outlineBorderFocused,
+        fieldBorder(isActive, filled),
       ]}
     >
       {digit ? (

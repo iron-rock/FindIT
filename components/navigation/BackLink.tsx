@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { colors, Text } from "../../theme";
@@ -14,6 +14,8 @@ type BackLinkProps = {
   inCtaRow?: boolean;
   iconColor?: string;
   labelColor?: string;
+  iconSize?: number;
+  style?: StyleProp<ViewStyle>;
 };
 
 /** Кнопка «назад» для auth-флоу: крупная стрелка + лёгкая подпись. */
@@ -25,10 +27,13 @@ export function BackLink({
   inCtaRow = false,
   iconColor = colors.accentBright,
   labelColor = colors.accentBright,
+  iconSize,
+  style,
 }: BackLinkProps) {
   const { t } = useTranslation();
   const resolvedLabel = label ?? t("common.back");
   const resolvedA11y = accessibilityLabel ?? resolvedLabel;
+  const resolvedIconSize = iconSize ?? (iconOnly ? 20 : 12);
   return (
     <Pressable
       accessibilityRole="button"
@@ -40,12 +45,13 @@ export function BackLink({
         iconOnly && styles.rootIconOnly,
         inCtaRow && styles.rootInCtaRow,
         pressed && styles.pressed,
+        style,
       ]}
     >
       <View style={styles.row}>
         <Ionicons
           name="chevron-back"
-          size={iconOnly ? 20 : 12}
+          size={resolvedIconSize}
           color={iconColor}
         />
         {!iconOnly ? (

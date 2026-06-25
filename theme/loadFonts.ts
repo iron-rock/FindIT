@@ -27,7 +27,7 @@ export const outfitFontMap = {
   Outfit_900Black,
 } as const;
 
-/** Playfair Display — логотип и кнопки на Welcome. */
+/** Playfair Display — wordmark на Welcome. */
 export const playfairFontMap = {
   PlayfairDisplay_600SemiBold,
   PlayfairDisplay_600SemiBold_Italic,

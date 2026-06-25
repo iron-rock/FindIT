@@ -43,7 +43,13 @@
       "@sentry/react-native",
       "expo-video",
       "expo-font",
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "FindIT нужен доступ к фото, чтобы отправлять изображения в чате."
+        }
+      ]
     ]
   }
 }

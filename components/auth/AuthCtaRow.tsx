@@ -4,9 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { BackLink } from '../navigation/BackLink';
 import { colors, font, Text } from '../../theme';
 import {
-  outlineBorder,
   outlineBorderPressed,
-  outlineFill,
   outlineRadius,
   outlineSurface,
 } from '../../theme/surface';
@@ -78,9 +76,6 @@ const styles = StyleSheet.create({
     height: CTA_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: outlineRadius,
-    backgroundColor: outlineFill,
-    ...outlineBorder,
   },
   ctaPressable: {
     flex: 1,

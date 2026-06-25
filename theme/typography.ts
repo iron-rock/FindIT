@@ -1,6 +1,6 @@
 import type { TextStyle } from 'react-native';
 
-/** Playfair Display — брендовый заголовок и кнопки Welcome. */
+/** Playfair Display — wordmark на Welcome. */
 export const playfairFontFamily = {
   semiBold: 'PlayfairDisplay_600SemiBold',
   semiBoldItalic: 'PlayfairDisplay_600SemiBold_Italic',

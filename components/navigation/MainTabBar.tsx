@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import {
   Animated,
+  Easing,
   PanResponder,
   Platform,
   Pressable,
@@ -10,6 +11,7 @@ import {
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FabRouteGlyph } from "../icons/FabRouteGlyph";
@@ -23,7 +25,7 @@ type TabName = keyof MainTabParamList;
 const TAB_ORDER: TabName[] = ["Chats", "CandidateSwipe", "Profile"];
 
 const TAB_ICON_SIZE: Record<TabName, number> = {
-  CandidateSwipe: 32,
+  CandidateSwipe: 36,
   Chats: 28,
   Profile: 29,
 };
@@ -34,6 +36,8 @@ const TAB_HEIGHT = 48;
 const TAB_GAP = 14;
 const TAB_STEP = TAB_WIDTH + TAB_GAP;
 const EDGE_RUBBER_BAND = 0.32;
+const BAR_PULSE_SCALE = 1.04;
+const BAR_SCALE_MS = 320;
 
 function springToThumb(anim: Animated.Value, toValue: number, velocity = 0) {
   Animated.spring(anim, {
@@ -46,6 +50,24 @@ function springToThumb(anim: Animated.Value, toValue: number, velocity = 0) {
     restDisplacementThreshold: 0.4,
     restSpeedThreshold: 0.4,
   }).start();
+}
+
+function animateBarScale(scale: Animated.Value, toValue: number) {
+  scale.stopAnimation();
+  Animated.timing(scale, {
+    toValue,
+    duration: BAR_SCALE_MS,
+    easing: Easing.out(Easing.cubic),
+    useNativeDriver: true,
+  }).start();
+}
+
+function pressBarScale(scale: Animated.Value) {
+  animateBarScale(scale, BAR_PULSE_SCALE);
+}
+
+function releaseBarScale(scale: Animated.Value) {
+  animateBarScale(scale, 1);
 }
 
 function rubberBandX(value: number, min: number, max: number): number {
@@ -97,9 +119,47 @@ export function MainTabBar({ state, navigation }: BottomTabBarProps) {
 
   const maxSlide = TAB_STEP * (TAB_ORDER.length - 1);
   const slideAnim = useRef(new Animated.Value(focusedIdx * TAB_STEP)).current;
+  const barScale = useRef(new Animated.Value(1)).current;
   const slidePosRef = useRef(focusedIdx * TAB_STEP);
   const draggingRef = useRef(false);
+  const fingerDownRef = useRef(false);
+  const barHeldVisualRef = useRef(false);
   const dragStartRef = useRef(0);
+  const skipNextFocusEffect = useRef(false);
+
+  const syncDragStart = (gestureDx: number) => {
+    dragStartRef.current = slidePosRef.current - gestureDx;
+  };
+
+  const updateBarHold = () => {
+    const shouldHold = fingerDownRef.current || draggingRef.current;
+    if (shouldHold === barHeldVisualRef.current) {
+      return;
+    }
+    barHeldVisualRef.current = shouldHold;
+    if (shouldHold) {
+      pressBarScale(barScale);
+    } else {
+      releaseBarScale(barScale);
+    }
+  };
+
+  const onBarPressIn = () => {
+    fingerDownRef.current = true;
+    updateBarHold();
+  };
+
+  const onBarPressOut = () => {
+    if (draggingRef.current) {
+      return;
+    }
+    fingerDownRef.current = false;
+    updateBarHold();
+  };
+
+  const springThumb = (toValue: number, velocity = 0) => {
+    springToThumb(slideAnim, toValue, velocity);
+  };
 
   useEffect(() => {
     const sub = slideAnim.addListener(({ value }) => {
@@ -113,23 +173,29 @@ export function MainTabBar({ state, navigation }: BottomTabBarProps) {
       return;
     }
 
-    springToThumb(slideAnim, focusedIdx * TAB_STEP);
-  }, [focusedIdx, slideAnim]);
+    if (skipNextFocusEffect.current) {
+      skipNextFocusEffect.current = false;
+      return;
+    }
+
+    springThumb(focusedIdx * TAB_STEP);
+  }, [focusedIdx, slideAnim, barScale]);
 
   const panResponder = useMemo(
     () =>
       PanResponder.create({
         onMoveShouldSetPanResponder: (_, gesture) =>
-          Math.abs(gesture.dx) > 6 &&
-          Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.1,
+          Math.abs(gesture.dx) > 4 &&
+          Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.05,
         onMoveShouldSetPanResponderCapture: (_, gesture) =>
           Math.abs(gesture.dx) > 10 &&
           Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.2,
-        onPanResponderGrant: () => {
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderGrant: (_, gesture) => {
           draggingRef.current = true;
-          slideAnim.stopAnimation((value) => {
-            dragStartRef.current = value;
-          });
+          updateBarHold();
+          syncDragStart(gesture.dx);
+          slideAnim.stopAnimation();
         },
         onPanResponderMove: (_, gesture) => {
           const raw = dragStartRef.current + gesture.dx;
@@ -137,6 +203,8 @@ export function MainTabBar({ state, navigation }: BottomTabBarProps) {
         },
         onPanResponderRelease: (_, gesture) => {
           draggingRef.current = false;
+          fingerDownRef.current = false;
+          updateBarHold();
 
           const projected = clamp(
             slidePosRef.current + gesture.vx * 22,
@@ -146,16 +214,20 @@ export function MainTabBar({ state, navigation }: BottomTabBarProps) {
           const nextIdx = Math.round(projected / TAB_STEP);
           const targetX = nextIdx * TAB_STEP;
 
+          skipNextFocusEffect.current = true;
           navigation.navigate(TAB_ORDER[nextIdx]);
 
-          springToThumb(slideAnim, targetX, gesture.vx);
+          springThumb(targetX, gesture.vx);
         },
         onPanResponderTerminate: () => {
           draggingRef.current = false;
-          springToThumb(slideAnim, focusedIdx * TAB_STEP);
+          fingerDownRef.current = false;
+          updateBarHold();
+          const idx = Math.round(slidePosRef.current / TAB_STEP);
+          springThumb(clamp(idx, 0, TAB_ORDER.length - 1) * TAB_STEP);
         },
       }),
-    [focusedIdx, maxSlide, navigation, slideAnim],
+    [focusedIdx, maxSlide, navigation, slideAnim, barScale],
   );
 
   const navigateTo = (name: TabName) => {
@@ -165,56 +237,86 @@ export function MainTabBar({ state, navigation }: BottomTabBarProps) {
     navigation.navigate(name);
   };
 
+  // Полностью прячем таб-бар внутри комнаты чата (ChatRoom).
+  // Не размонтируем (display:none), чтобы растровые иконки не декодировались
+  // заново при возврате на список — иначе главная иконка мигает с задержкой.
+  const focusedRoute = state.routes[state.index];
+  const nestedRouteName =
+    focusedRoute?.name === "Chats"
+      ? getFocusedRouteNameFromRoute(focusedRoute) ?? "ChatsList"
+      : undefined;
+  const hidden = nestedRouteName === "ChatRoom";
+
   return (
-    <View pointerEvents="box-none" style={styles.layer}>
+    <View
+      pointerEvents={hidden ? "none" : "box-none"}
+      style={[styles.layer, hidden && styles.hidden]}
+    >
       <View
         pointerEvents="box-none"
         style={[styles.wrap, { paddingBottom: bottomPad }]}
       >
-        <GlassSurface
-          radius={outlineRadiusPill}
-          borderless
-          style={styles.barGlass}
+        <Animated.View
+          style={[styles.barScaleWrap, { transform: [{ scale: barScale }] }]}
         >
-          <View style={styles.track} {...panResponder.panHandlers}>
-            <Animated.View
-              pointerEvents="none"
-              style={[
-                styles.thumbWrap,
-                { transform: [{ translateX: slideAnim }] },
-              ]}
+          <Pressable
+            onPressIn={onBarPressIn}
+            onPressOut={onBarPressOut}
+            style={styles.barPressable}
+          >
+            <GlassSurface
+              radius={outlineRadiusPill}
+              borderless
+              style={styles.barGlass}
             >
-              <View style={styles.thumb} />
-            </Animated.View>
+              <View style={styles.track} {...panResponder.panHandlers}>
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  styles.thumbWrap,
+                  { transform: [{ translateX: slideAnim }] },
+                ]}
+              >
+                <View style={styles.thumb} />
+              </Animated.View>
 
-            <View style={styles.tabsRow}>
-              {TAB_ORDER.map((name) => {
-                const active = focused === name;
+              <View style={styles.tabsRow}>
+                {TAB_ORDER.map((name) => {
+                  const active = focused === name;
 
-                return (
-                  <Pressable
-                    key={name}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: active }}
-                    accessibilityLabel={accessibilityLabelForRoute(
-                      name,
-                      t,
-                      role,
-                    )}
-                    hitSlop={4}
-                    onPress={() => navigateTo(name)}
-                    style={({ pressed }) => [
-                      styles.tab,
-                      pressed && styles.tabPressed,
-                    ]}
-                  >
-                    <FabRouteGlyph route={name} size={TAB_ICON_SIZE[name]} />
-                  </Pressable>
-                );
-              })}
+                  return (
+                    <Pressable
+                      key={name}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: active }}
+                      accessibilityLabel={accessibilityLabelForRoute(
+                        name,
+                        t,
+                        role,
+                      )}
+                      hitSlop={4}
+                      onPressIn={onBarPressIn}
+                      onPressOut={onBarPressOut}
+                      onPress={() => {
+                        if (draggingRef.current) {
+                          return;
+                        }
+                        navigateTo(name);
+                      }}
+                      style={({ pressed }) => [
+                        styles.tab,
+                        pressed && styles.tabPressed,
+                      ]}
+                    >
+                      <FabRouteGlyph route={name} size={TAB_ICON_SIZE[name]} />
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
-          </View>
-        </GlassSurface>
+          </GlassSurface>
+          </Pressable>
+        </Animated.View>
       </View>
     </View>
   );
@@ -226,6 +328,9 @@ const styles = StyleSheet.create({
     pointerEvents: "box-none",
     zIndex: 100,
   },
+  hidden: {
+    display: "none",
+  },
   wrap: {
     position: "absolute",
     left: 0,
@@ -233,6 +338,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     alignItems: "center",
     pointerEvents: "box-none",
+  },
+  barScaleWrap: {
+    alignItems: "center",
+  },
+  barPressable: {
+    borderRadius: outlineRadiusPill,
   },
   barGlass: {
     overflow: "hidden",

@@ -157,6 +157,9 @@ export const en = {
     title: "Chats",
     subtitle:
       "Conversations with employers will appear here once messaging is connected.",
+    inputPlaceholder: "Message",
+    send: "Send",
+    attachPhoto: "Attach photo",
   },
   swipe: {
     filtersA11y: "Search filters",

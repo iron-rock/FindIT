@@ -1,5 +1,13 @@
+import { useEffect, useRef } from 'react';
 import { Image } from 'expo-image';
-import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import {
+  Animated,
+  Easing,
+  Pressable,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -11,20 +19,34 @@ import {
 import type { AiToolCatalogItem } from '../../data/aiToolsCatalog';
 import { colors, font, Text } from '../../theme';
 import {
-  outlineBorder,
-  outlineBorderColorFocused,
+  outlineBorderWidth,
   outlineFill,
   outlineRadius,
 } from '../../theme/surface';
+import { useAuthOutline } from './AuthOutlineContext';
 
 const COMPACT_COLS = 3;
 const COMPACT_GAP = 4;
 const COMPACT_H_PADDING = 48;
+const SELECT_ANIM_MS = 240;
+const DISABLED_OPACITY = 0.4;
+
+const AnimatedText = Animated.createAnimatedComponent(Text);
 
 type AiToolsPickerProps = {
   value: string;
   onChange: (value: string) => void;
   compact?: boolean;
+};
+
+type AiToolChipProps = {
+  tool: AiToolCatalogItem;
+  label: string;
+  selected: boolean;
+  disabled: boolean;
+  compact: boolean;
+  width?: number;
+  onPress: () => void;
 };
 
 function AiToolLogo({ tool, compact }: { tool: AiToolCatalogItem; compact?: boolean }) {
@@ -35,6 +57,94 @@ function AiToolLogo({ tool, compact }: { tool: AiToolCatalogItem; compact?: bool
       style={[styles.logo, compact && styles.logoCompact]}
       contentFit="contain"
     />
+  );
+}
+
+function AiToolChip({
+  tool,
+  label,
+  selected,
+  disabled,
+  compact,
+  width,
+  onPress,
+}: AiToolChipProps) {
+  const { selectedBorder } = useAuthOutline();
+  const selection = useRef(new Animated.Value(selected ? 1 : 0)).current;
+  const gridOpacity = useRef(new Animated.Value(disabled ? DISABLED_OPACITY : 1)).current;
+  const activeBorderColor =
+    (selectedBorder?.borderColor as string | undefined) ?? colors.textPrimary;
+
+  useEffect(() => {
+    Animated.timing(selection, {
+      toValue: selected ? 1 : 0,
+      duration: SELECT_ANIM_MS,
+      easing: Easing.inOut(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [selected, selection]);
+
+  useEffect(() => {
+    Animated.timing(gridOpacity, {
+      toValue: disabled ? DISABLED_OPACITY : 1,
+      duration: SELECT_ANIM_MS,
+      easing: Easing.inOut(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [disabled, gridOpacity]);
+
+  const borderColor = selection.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['rgba(255, 255, 255, 0)', activeBorderColor],
+  });
+
+  const fillColor = selection.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.04)'],
+  });
+
+  const labelColor = selection.interpolate({
+    inputRange: [0, 1],
+    outputRange: [colors.textMuted, colors.textPrimary],
+  });
+
+  return (
+    <Pressable
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: selected, disabled }}
+      accessibilityLabel={label}
+      disabled={disabled}
+      onPress={onPress}
+    >
+      <Animated.View style={{ opacity: gridOpacity }}>
+        <Animated.View
+          style={[
+            styles.chip,
+            compact && styles.chipCompact,
+            compact && width != null && { width, maxWidth: width },
+            styles.chipBorder,
+            {
+              borderRadius: outlineRadius,
+              borderColor,
+              backgroundColor: fillColor,
+            },
+          ]}
+        >
+          <AiToolLogo tool={tool} compact={compact} />
+          <AnimatedText
+            style={[
+              styles.chipLabel,
+              compact && styles.chipLabelCompact,
+              selected && styles.chipLabelSelected,
+              { color: labelColor },
+            ]}
+            numberOfLines={1}
+          >
+            {label}
+          </AnimatedText>
+        </Animated.View>
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -62,37 +172,16 @@ export function AiToolsPicker({ value, onChange, compact = false }: AiToolsPicke
           const label = t(tool.nameKey);
 
           return (
-            <Pressable
+            <AiToolChip
               key={tool.id}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: selected, disabled }}
-              accessibilityLabel={label}
+              tool={tool}
+              label={label}
+              selected={selected}
               disabled={disabled}
+              compact={compact}
+              width={compact ? compactChipWidth : undefined}
               onPress={() => onChange(toggleSelectedAiTool(value, tool.id))}
-              style={({ pressed }) => [
-                styles.chip,
-                compact && styles.chipCompact,
-                compact && { width: compactChipWidth, maxWidth: compactChipWidth },
-                { borderRadius: outlineRadius },
-                outlineBorder,
-                { backgroundColor: outlineFill },
-                selected && styles.chipSelected,
-                disabled && styles.chipDisabled,
-                pressed && !disabled && styles.chipPressed,
-              ]}
-            >
-              <AiToolLogo tool={tool} compact={compact} />
-              <Text
-                style={[
-                  styles.chipLabel,
-                  compact && styles.chipLabelCompact,
-                  selected && styles.chipLabelSelected,
-                ]}
-                numberOfLines={1}
-              >
-                {label}
-              </Text>
-            </Pressable>
+            />
           );
         })}
       </View>
@@ -129,6 +218,7 @@ const styles = StyleSheet.create({
     flexBasis: '46%',
     paddingHorizontal: 12,
     paddingVertical: 10,
+    backgroundColor: outlineFill,
   },
   chipCompact: {
     flexDirection: 'column',
@@ -140,16 +230,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingVertical: 6,
   },
-  chipSelected: {
-    borderColor: colors.textPrimary,
-    borderWidth: 1.5,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-  },
-  chipDisabled: {
-    opacity: 0.4,
-  },
-  chipPressed: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+  chipBorder: {
+    borderWidth: outlineBorderWidth,
   },
   logo: {
     width: 22,
@@ -163,7 +245,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '400',
-    color: colors.textMuted,
     ...font('400'),
   },
   chipLabelCompact: {
@@ -173,7 +254,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   chipLabelSelected: {
-    color: colors.textPrimary,
     fontWeight: '500',
     ...font('500'),
   },

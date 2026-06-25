@@ -25,6 +25,7 @@ function tintedRaster(source: number, px: number, tintColor: string) {
       accessibilityIgnoresInvertColors
       source={source}
       resizeMode="contain"
+      fadeDuration={0}
       style={{
         width: px,
         height: px,

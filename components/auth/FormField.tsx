@@ -4,11 +4,8 @@ import { useTranslation } from "react-i18next";
 
 import type { RegisterFieldDef } from "../../data/registerStepDefs";
 import { colors, font, Text, TextInput } from "../../theme";
-import {
-  outlineBorderFocused,
-  outlineRadius,
-  outlineSurface,
-} from "../../theme/surface";
+import { outlineRadius, outlineSurface } from "../../theme/surface";
+import { useAuthOutline } from "./AuthOutlineContext";
 
 type FormFieldProps = {
   field: RegisterFieldDef;
@@ -31,7 +28,9 @@ export function FormField({
   hidePlaceholder = false,
 }: FormFieldProps) {
   const { t } = useTranslation();
+  const { fieldBorder } = useAuthOutline();
   const label = t(field.labelKey);
+  const filled = value.trim().length > 0;
 
   return (
     <View style={styles.fieldGroup}>
@@ -39,7 +38,7 @@ export function FormField({
       <View
         style={[
           outlineSurface(outlineRadius),
-          focused && outlineBorderFocused,
+          fieldBorder(focused, filled),
         ]}
       >
         <TextInput

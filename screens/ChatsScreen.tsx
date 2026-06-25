@@ -1,10 +1,12 @@
-import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ProfileAvatar } from '../components/profile/ProfileAvatar';
-import type { MainTabParamList } from '../navigation/types';
+import { fetchConversations, type ConversationPreview } from '../lib/chat';
+import type { ChatsStackParamList } from '../navigation/types';
 import { colors, Text } from '../theme';
 import { outlineRadius } from '../theme/surface';
 
@@ -37,22 +39,6 @@ const CHAT_CONTACTS: ChatContact[] = [
   { id: 'p7', name: 'София Ли', stack: ['Swift', 'SwiftUI', 'Combine'] },
   { id: 'p8', name: 'Артём Г.', stack: ['Kotlin', 'Compose', 'Coroutines'] },
   { id: 'p9', name: 'Елена Р.', stack: ['Playwright', 'TypeScript', 'CI'] },
-];
-
-/** Диалоги для макета; позже — реальная переписка с сервером. */
-const CHAT_ROWS = [
-  {
-    id: 'ch1',
-    title: 'Команда «НейроСофт»',
-    preview: 'Добрый день! Готовы обсудить оффер и старт в команде?',
-    date: 'сегодня',
-  },
-  {
-    id: 'ch2',
-    title: 'HR · финтех-банк',
-    preview: 'Спасибо за интервью. Подберём следующий созвон с тимлидом.',
-    date: 'вчера',
-  },
 ];
 
 function formatStack(stack: string[]): string {
@@ -110,13 +96,33 @@ function ChatContactTile({ contact, width, height }: ChatContactTileProps) {
   );
 }
 
-export type ChatsScreenProps = BottomTabScreenProps<MainTabParamList, 'Chats'>;
+export type ChatsScreenProps = NativeStackScreenProps<ChatsStackParamList, 'ChatsList'>;
 
-export function ChatsScreen(_props: ChatsScreenProps) {
+export function ChatsScreen({ navigation }: ChatsScreenProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { width: screenW } = useWindowDimensions();
   const topPad = Math.max(insets.top, 10) + 16;
+  const [threads, setThreads] = useState<ConversationPreview[]>([]);
+
+  const loadThreads = useCallback(async () => {
+    const data = await fetchConversations();
+    setThreads(data);
+  }, []);
+
+  useEffect(() => {
+    void loadThreads();
+  }, [loadThreads]);
+
+  const openChat = useCallback(
+    (thread: ConversationPreview) => {
+      navigation.navigate('ChatRoom', {
+        conversationId: thread.id,
+        counterpartName: thread.counterpartName,
+      });
+    },
+    [navigation],
+  );
 
   const cellWidth =
     (screenW - GRID_PAD * 2 - GRID_GAP * (GRID_COLS - 1)) / GRID_COLS;
@@ -146,23 +152,27 @@ export function ChatsScreen(_props: ChatsScreenProps) {
       </View>
 
       <View style={styles.listBlock}>
-        {CHAT_ROWS.map((item, index) => (
+        {threads.map((item, index) => (
           <View key={item.id}>
-            <View style={styles.row}>
-              <ProfileAvatar name={item.title} size={AVATAR_SIZE} />
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => openChat(item)}
+              style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+            >
+              <ProfileAvatar name={item.counterpartName} size={AVATAR_SIZE} />
               <View style={styles.rowBody}>
                 <View style={styles.rowTop}>
                   <Text style={styles.threadTitle} numberOfLines={1}>
-                    {item.title}
+                    {item.counterpartName}
                   </Text>
-                  <Text style={styles.threadDate}>{item.date}</Text>
+                  <Text style={styles.threadDate}>{item.dateLabel}</Text>
                 </View>
                 <Text style={styles.threadPreview} numberOfLines={2}>
-                  {item.preview}
+                  {item.lastMessagePreview}
                 </Text>
               </View>
-            </View>
-            {index < CHAT_ROWS.length - 1 ? (
+            </Pressable>
+            {index < threads.length - 1 ? (
               <View style={styles.separator}>
                 <View style={styles.separatorLine} />
               </View>
@@ -258,6 +268,9 @@ const styles = StyleSheet.create({
     gap: ROW_GAP,
     paddingHorizontal: ROW_PAD_H,
     paddingVertical: 14,
+  },
+  rowPressed: {
+    opacity: 0.72,
   },
   rowBody: {
     flex: 1,

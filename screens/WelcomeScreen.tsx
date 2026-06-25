@@ -22,6 +22,7 @@ import { OtpInput } from "../components/auth/OtpInput";
 import { PhoneField } from "../components/auth/PhoneField";
 import { RoleCheckboxes } from "../components/auth/RoleCheckboxes";
 import { AuthCtaRow } from "../components/auth/AuthCtaRow";
+import { AuthOutlineProvider } from "../components/auth/AuthOutlineContext";
 import { SocialAuthButtons } from "../components/auth/SocialAuthButtons";
 import { StepDots } from "../components/auth/StepDots";
 import { ConstellationBackground } from "../components/background/ConstellationBackground";
@@ -110,9 +111,13 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
   const titleScale = useRef(new Animated.Value(1)).current;
   const progressScale = useRef(new Animated.Value(1)).current;
   const intentTitleOpacity = useRef(new Animated.Value(0)).current;
-  const intentTitleShift = useRef(new Animated.Value(-INTENT_ENTER_SHIFT)).current;
+  const intentTitleShift = useRef(
+    new Animated.Value(-INTENT_ENTER_SHIFT),
+  ).current;
   const intentButtonsOpacity = useRef(new Animated.Value(0)).current;
-  const intentButtonsShift = useRef(new Animated.Value(INTENT_ENTER_SHIFT)).current;
+  const intentButtonsShift = useRef(
+    new Animated.Value(INTENT_ENTER_SHIFT),
+  ).current;
   const intentEnterPlayed = useRef(false);
 
   const runIntentEnterAnim = useCallback(() => {
@@ -229,9 +234,7 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
     : formSteps[stepIndex - 1];
   const isHighlightsStep = currentStep?.kind === "highlights";
   const isLast = !isAccountStep && stepIndex === formSteps.length;
-  const stepDotsCount = role
-    ? 1 + formSteps.length
-    : REGISTER_DOTS_PLACEHOLDER;
+  const stepDotsCount = role ? 1 + formSteps.length : REGISTER_DOTS_PLACEHOLDER;
 
   const setField = (key: RegisterFieldKey, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -432,14 +435,15 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={styles.flex}
         >
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={[
-              styles.scrollContent,
-              isHighlightsStep && styles.scrollContentHighlights,
-            ]}
-            showsVerticalScrollIndicator={false}
-          >
+          <AuthOutlineProvider>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={[
+                styles.scrollContent,
+                isHighlightsStep && styles.scrollContentHighlights,
+              ]}
+              showsVerticalScrollIndicator={false}
+            >
             <View style={styles.mainColumn}>
               <Animated.View
                 style={{ transform: [{ translateY: groupTranslateY }] }}
@@ -455,6 +459,7 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
                   <Animated.View
                     style={{
                       opacity: intentTitleOpacity,
+                      overflow: "visible",
                       transform: [
                         { scale: titleScale },
                         { translateY: intentTitleShift },
@@ -678,6 +683,7 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
               </Animated.View>
             </View>
           </ScrollView>
+          </AuthOutlineProvider>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
@@ -772,9 +778,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 22,
     gap: 22,
+    overflow: "visible",
   },
   titleBlockIntent: {
-    marginBottom: 6,
+    marginBottom: 12,
   },
   titleBlockWithDots: {
     marginBottom: 52,
@@ -790,7 +797,7 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
   },
   contentIntent: {
-    marginTop: -8,
+    marginTop: 0,
   },
   highlightsStack: {
     alignSelf: "stretch",

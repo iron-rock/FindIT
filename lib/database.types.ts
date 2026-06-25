@@ -160,14 +160,21 @@ export interface ConversationRow {
   created_at: Iso8601;
 }
 
+export type MessageType = 'text' | 'image';
+
 export interface MessageRow {
   id: Uuid;
   conversation_id: Uuid;
   sender_id: Uuid;
   body: string;
+  message_type: MessageType;
+  image_url: string | null;
   created_at: Iso8601;
 }
-export type MessageInsert = Pick<MessageRow, 'conversation_id' | 'sender_id' | 'body'>;
+export type MessageInsert = Pick<
+  MessageRow,
+  'conversation_id' | 'sender_id' | 'body' | 'message_type' | 'image_url'
+>;
 
 /** Карта таблиц: имя в БД -> { Row; Insert }. */
 export interface FinditDatabase {

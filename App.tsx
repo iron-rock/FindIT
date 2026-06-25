@@ -2,6 +2,7 @@ import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { DevPanel } from './components/dev/DevPanel';
@@ -108,19 +109,21 @@ export default function App() {
 
   return (
     <SafeAreaProvider style={{ flex: 1 }}>
-      <SupabaseAuthProvider>
-        <GestureHandlerRootView
-          style={{ flex: 1, backgroundColor: colors.background }}
-        >
-          {ready ? (
-            <SplashProvider splashDone={splashDone}>
-              <RootNavigator />
-            </SplashProvider>
-          ) : null}
-          {!splashDone ? <SplashVideo onFinish={handleSplashFinish} /> : null}
-        </GestureHandlerRootView>
-        {ready ? <DevPanel /> : null}
-      </SupabaseAuthProvider>
+      <KeyboardProvider>
+        <SupabaseAuthProvider>
+          <GestureHandlerRootView
+            style={{ flex: 1, backgroundColor: colors.background }}
+          >
+            {ready ? (
+              <SplashProvider splashDone={splashDone}>
+                <RootNavigator />
+              </SplashProvider>
+            ) : null}
+            {!splashDone ? <SplashVideo onFinish={handleSplashFinish} /> : null}
+          </GestureHandlerRootView>
+          {ready ? <DevPanel /> : null}
+        </SupabaseAuthProvider>
+      </KeyboardProvider>
       <StatusBar style="light" />
     </SafeAreaProvider>
   );

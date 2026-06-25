@@ -1,13 +1,13 @@
 import { Platform, StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { formatInternationalPhoneInput } from "../../lib/phoneFormat";
-import { colors, font, Text, TextInput } from "../../theme";
 import {
-  outlineBorderFocused,
-  outlineRadius,
-  outlineSurface,
-} from "../../theme/surface";
+  formatInternationalPhoneInput,
+  PHONE_INPUT_DISPLAY_MAX_LENGTH,
+} from "../../lib/phoneFormat";
+import { colors, font, Text, TextInput } from "../../theme";
+import { outlineRadius, outlineSurface } from "../../theme/surface";
+import { useAuthOutline } from "./AuthOutlineContext";
 
 type PhoneFieldProps = {
   value: string;
@@ -28,6 +28,8 @@ export function PhoneField({
   onBlur,
 }: PhoneFieldProps) {
   const { t } = useTranslation();
+  const { fieldBorder } = useAuthOutline();
+  const filled = value.trim().length > 0;
 
   const handleChangeText = (raw: string) => {
     onChangeText(formatInternationalPhoneInput(raw));
@@ -39,7 +41,7 @@ export function PhoneField({
       <View
         style={[
           outlineSurface(outlineRadius),
-          focused && outlineBorderFocused,
+          fieldBorder(focused, filled),
         ]}
       >
         <TextInput
@@ -50,6 +52,7 @@ export function PhoneField({
           editable={!readOnly}
           keyboardType="phone-pad"
           autoCorrect={false}
+          maxLength={PHONE_INPUT_DISPLAY_MAX_LENGTH}
           placeholder={t("auth.phonePlaceholder")}
           placeholderTextColor="rgba(255, 255, 255, 0.45)"
           style={[styles.input, readOnly && styles.readOnlyInput]}
