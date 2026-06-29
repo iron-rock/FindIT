@@ -16,6 +16,7 @@ export type RegisterFieldKey =
   | 'salary'
   | 'workFormat'
   | 'selectedAiTools'
+  | 'selectedAiModels'
   | 'aiTools'
   | 'github'
   | 'company'
@@ -133,6 +134,7 @@ export const EMPTY_REGISTER_FORM: RegisterFormState = {
   salary: '',
   workFormat: '',
   selectedAiTools: '',
+  selectedAiModels: '',
   aiTools: '',
   github: '',
   company: '',

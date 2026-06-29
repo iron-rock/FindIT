@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { BrandTitle } from "../components/auth/BrandTitle";
+import { AiModelsPicker } from "../components/auth/AiModelsPicker";
 import { AiToolsPicker } from "../components/auth/AiToolsPicker";
 import { FormField } from "../components/auth/FormField";
 import { OtpInput } from "../components/auth/OtpInput";
@@ -616,6 +617,11 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
                         compact
                         value={form.selectedAiTools}
                         onChange={(value) => setField("selectedAiTools", value)}
+                      />
+                      <AiModelsPicker
+                        compact
+                        value={form.selectedAiModels}
+                        onChange={(value) => setField("selectedAiModels", value)}
                       />
                       <FormField
                         field={currentStep.fields[0]}

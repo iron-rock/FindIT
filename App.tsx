@@ -6,7 +6,7 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { DevPanel } from './components/dev/DevPanel';
-import { SplashVideo } from './components/SplashVideo';
+import { SplashImage } from './components/SplashImage';
 import { SplashProvider } from './contexts/SplashContext';
 import { SupabaseAuthProvider } from './contexts/SupabaseAuthContext';
 import { initI18n } from './lib/i18n';
@@ -119,7 +119,7 @@ export default function App() {
                 <RootNavigator />
               </SplashProvider>
             ) : null}
-            {!splashDone ? <SplashVideo onFinish={handleSplashFinish} /> : null}
+            {!splashDone ? <SplashImage onFinish={handleSplashFinish} /> : null}
           </GestureHandlerRootView>
           {ready ? <DevPanel /> : null}
         </SupabaseAuthProvider>
