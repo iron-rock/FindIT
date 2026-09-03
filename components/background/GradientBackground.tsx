@@ -27,9 +27,9 @@ export function GradientBackground() {
           r={Math.max(width, height) * 0.95}
           gradientUnits="userSpaceOnUse"
         >
-          <Stop offset="0" stopColor="#2C5C97" />
-          <Stop offset="0.5" stopColor="#163861" />
-          <Stop offset="1" stopColor="#0A2440" />
+          <Stop offset="0" stopColor="#1E4A7A" />
+          <Stop offset="0.5" stopColor="#102A4C" />
+          <Stop offset="1" stopColor="#061624" />
         </RadialGradient>
       </Defs>
       <Rect

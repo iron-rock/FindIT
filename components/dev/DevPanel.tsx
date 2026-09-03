@@ -14,10 +14,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
-import { devSignIn, readAccountRole, setAccountRole } from '../../lib/devAuth';
-import { requestMainSessionRoleSwitch } from '../../navigation/mainSessionBridge';
-import { resetToWelcome } from '../../navigation/rootNavigation';
+import { devSignIn, readAccountRole } from '../../lib/devAuth';
+import { resetToMainProfile, resetToWelcome } from '../../navigation/rootNavigation';
 import { isSupabaseConfigured } from '../../lib/supabase';
+import type { UserRole } from '../../lib/roles';
 import { colors } from '../../theme/colors';
 
 const TAB_WIDTH = 30;
@@ -27,7 +27,7 @@ const ACTIONS_WIDTH = 34 * 2 + 6 + ACTIONS_SIDE_PADDING * 2;
 const CORNER_MARGIN = 8;
 const DRAG_THRESHOLD = 6;
 
-type DevAction = 'finder' | 'recruiter' | 'login' | null;
+type DevAction = UserRole | 'login' | null;
 type PanelCorner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
 function isLeftCorner(corner: PanelCorner): boolean {
@@ -103,6 +103,7 @@ export function DevPanel() {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const { user } = useSupabaseAuth();
   const [busyAction, setBusyAction] = useState<DevAction>(null);
+  const [previewRole, setPreviewRole] = useState<UserRole | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [corner, setCorner] = useState<PanelCorner>('top-right');
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
@@ -218,11 +219,20 @@ export function DevPanel() {
     }
   }, []);
 
+  const openMockProfile = useCallback(
+    (role: UserRole) => {
+      setPreviewRole(role);
+      resetToMainProfile(role);
+      setOpen(false);
+    },
+    [setOpen],
+  );
+
   if (!__DEV__) {
     return null;
   }
 
-  const currentRole = readAccountRole(user);
+  const currentRole = previewRole ?? readAccountRole(user);
   const onLeft = isLeftCorner(corner);
   const anchorStyle = dragPos
     ? { position: 'absolute' as const, left: dragPos.x, top: dragPos.y }
@@ -278,29 +288,15 @@ export function DevPanel() {
             icon="search"
             active={currentRole === 'finder'}
             disabled={busyAction !== null}
-            accessibilityLabel="Роль finder"
-            onPress={() =>
-              runAction('finder', async () => {
-                requestMainSessionRoleSwitch('finder');
-                if (user) {
-                  await setAccountRole('finder');
-                }
-              })
-            }
+            accessibilityLabel="Профиль finder"
+            onPress={() => openMockProfile('finder')}
           />
           <DevIconButton
             icon="briefcase-outline"
             active={currentRole === 'recruiter'}
             disabled={busyAction !== null}
-            accessibilityLabel="Роль recruiter"
-            onPress={() =>
-              runAction('recruiter', async () => {
-                requestMainSessionRoleSwitch('recruiter');
-                if (user) {
-                  await setAccountRole('recruiter');
-                }
-              })
-            }
+            accessibilityLabel="Профиль recruiter"
+            onPress={() => openMockProfile('recruiter')}
           />
         </View>
 
@@ -320,6 +316,7 @@ export function DevPanel() {
             disabled={busyAction !== null}
             accessibilityLabel="Выйти"
             onPress={() => {
+              setPreviewRole(null);
               resetToWelcome();
               setOpen(false);
             }}

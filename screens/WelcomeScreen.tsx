@@ -8,16 +8,14 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { BrandTitle } from "../components/auth/BrandTitle";
+import { BrandMark } from "../components/brand/BrandMark";
 import { AiModelsPicker } from "../components/auth/AiModelsPicker";
-import { AiToolsPicker } from "../components/auth/AiToolsPicker";
 import { FormField } from "../components/auth/FormField";
 import { OtpInput } from "../components/auth/OtpInput";
 import { PhoneField } from "../components/auth/PhoneField";
@@ -26,10 +24,8 @@ import { AuthCtaRow } from "../components/auth/AuthCtaRow";
 import { AuthOutlineProvider } from "../components/auth/AuthOutlineContext";
 import { SocialAuthButtons } from "../components/auth/SocialAuthButtons";
 import { StepDots } from "../components/auth/StepDots";
-import { ConstellationBackground } from "../components/background/ConstellationBackground";
-import { GradientBackground } from "../components/background/GradientBackground";
-import { MovingShadowOverlay } from "../components/background/MovingShadowOverlay";
-import { OutlineButton } from "../components/ui/OutlineButton";
+import { AppAtmosphere } from "../components/background/AppAtmosphere";
+import { SoftButton } from "../components/ui/SoftButton";
 import { registerPresetsByRole } from "../data/registerPresets";
 import {
   buildProfileFromRegistration,
@@ -57,16 +53,15 @@ import { RegisterAuthError, sendPhoneOtp } from "../lib/registerAuth";
 import { useSplashDone } from "../contexts/SplashContext";
 import type { RootStackParamList, UserRole } from "../navigation/types";
 import { colors, font, Text } from "../theme";
+import { outlineBorderColor } from "../theme/surface";
 
 export type WelcomeScreenProps = NativeStackScreenProps<
   RootStackParamList,
   "Welcome"
 >;
 
-/** Верхняя позиция названия на шагах входа/регистрации. */
-const AUTH_TITLE_TOP = 48;
-/** Единый вертикальный gap между блоками на 3-м шаге. */
-const HIGHLIGHTS_BLOCK_GAP = 16;
+/** Единый вертикальный gap между блоками на шаге highlights. */
+const HIGHLIGHTS_BLOCK_GAP = 24;
 
 type Phase = "intent" | "login" | "register";
 
@@ -78,7 +73,6 @@ const LOGIN_PASSWORD_FIELD: RegisterFieldDef = {
   autoCapitalize: "none",
 };
 
-const TITLE_ANIM_MS = 720;
 const CONTENT_FADE_OUT_MS = 200;
 const CONTENT_FADE_IN_MS = 300;
 const INTENT_ENTER_SHIFT = 12;
@@ -95,7 +89,6 @@ function getPhoneCountry(form: RegisterFormState): PhoneCountryCode {
 export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
   const { t } = useTranslation();
   const splashDone = useSplashDone();
-  const { height: windowHeight } = useWindowDimensions();
 
   const [phase, setPhase] = useState<Phase>("intent");
   const [role, setRole] = useState<UserRole | null>(null);
@@ -108,13 +101,7 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
 
   const contentOpacity = useRef(new Animated.Value(1)).current;
   const contentShift = useRef(new Animated.Value(0)).current;
-  const logoLift = useRef(new Animated.Value(0)).current;
-  const titleScale = useRef(new Animated.Value(1)).current;
   const progressScale = useRef(new Animated.Value(1)).current;
-  const intentTitleOpacity = useRef(new Animated.Value(0)).current;
-  const intentTitleShift = useRef(
-    new Animated.Value(-INTENT_ENTER_SHIFT),
-  ).current;
   const intentButtonsOpacity = useRef(new Animated.Value(0)).current;
   const intentButtonsShift = useRef(
     new Animated.Value(INTENT_ENTER_SHIFT),
@@ -122,24 +109,10 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
   const intentEnterPlayed = useRef(false);
 
   const runIntentEnterAnim = useCallback(() => {
-    intentTitleOpacity.setValue(0);
-    intentTitleShift.setValue(-INTENT_ENTER_SHIFT);
     intentButtonsOpacity.setValue(0);
     intentButtonsShift.setValue(INTENT_ENTER_SHIFT);
 
     Animated.parallel([
-      Animated.timing(intentTitleOpacity, {
-        toValue: 1,
-        duration: CONTENT_FADE_IN_MS,
-        easing: Easing.inOut(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(intentTitleShift, {
-        toValue: 0,
-        duration: CONTENT_FADE_IN_MS,
-        easing: Easing.inOut(Easing.cubic),
-        useNativeDriver: true,
-      }),
       Animated.timing(intentButtonsOpacity, {
         toValue: 1,
         duration: CONTENT_FADE_IN_MS,
@@ -153,12 +126,7 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
         useNativeDriver: true,
       }),
     ]).start();
-  }, [
-    intentButtonsOpacity,
-    intentButtonsShift,
-    intentTitleOpacity,
-    intentTitleShift,
-  ]);
+  }, [intentButtonsOpacity, intentButtonsShift]);
 
   useEffect(() => {
     if (!splashDone || intentEnterPlayed.current) {
@@ -167,16 +135,6 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
     intentEnterPlayed.current = true;
     runIntentEnterAnim();
   }, [splashDone, runIntentEnterAnim]);
-
-  const intentGroupOffset = Math.max(
-    0,
-    (windowHeight - AUTH_TITLE_TOP - 340) / 2,
-  );
-
-  const groupTranslateY = logoLift.interpolate({
-    inputRange: [0, 1],
-    outputRange: [intentGroupOffset, 0],
-  });
 
   const createGrowAnim = (scale: Animated.Value) =>
     Animated.sequence([
@@ -194,38 +152,9 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
       }),
     ]);
 
-  const createTitleGrowAnim = () => createGrowAnim(titleScale);
-
   const pulseProgressGrow = () => {
     progressScale.stopAnimation();
     createGrowAnim(progressScale).start();
-  };
-
-  const liftLogo = (toValue: 0 | 1) => {
-    titleScale.stopAnimation();
-    const moves: Animated.CompositeAnimation[] = [
-      Animated.timing(logoLift, {
-        toValue,
-        duration: TITLE_ANIM_MS,
-        easing: Easing.inOut(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ];
-
-    if (toValue === 1) {
-      moves.push(createTitleGrowAnim());
-    } else {
-      moves.push(
-        Animated.timing(titleScale, {
-          toValue: 1,
-          duration: TITLE_ANIM_MS,
-          easing: Easing.inOut(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      );
-    }
-
-    Animated.parallel(moves).start();
   };
 
   const formSteps = role ? REGISTER_STEPS_BY_ROLE[role] : [];
@@ -287,18 +216,18 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
   };
 
   const goToIntent = () => {
-    liftLogo(0);
     transition(() => {
       setPhase("intent");
       setRole(null);
       setStepIndex(0);
       setForm({ ...EMPTY_REGISTER_FORM });
+      runIntentEnterAnim();
     }, -1);
   };
 
   const goToLogin = () => {
     const preset = registerPresetsByRole.finder;
-    liftLogo(1);
+    intentButtonsOpacity.setValue(0);
     transition(() => {
       setPhase("login");
       setForm((prev) => ({
@@ -311,7 +240,7 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
   };
 
   const goToRegister = () => {
-    liftLogo(1);
+    intentButtonsOpacity.setValue(0);
     transition(() => {
       setPhase("register");
       setRole(null);
@@ -391,6 +320,12 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
   };
 
   const showDots = phase === "register";
+  const authTitleKey =
+    phase === "login"
+      ? ("auth.welcomeBack" as const)
+      : isAccountStep
+        ? ("auth.createAccount" as const)
+        : (currentStep?.titleKey ?? null);
   const ctaDisabled = phase === "register" && isAccountStep && !role;
   const registerCtaLabel = isLast ? t("auth.finish") : t("auth.next");
   const formattedPhone = formatPhoneDisplay(form.phone, getPhoneCountry(form));
@@ -423,10 +358,7 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
 
   return (
     <View style={styles.root}>
-      <GradientBackground />
-      <ConstellationBackground />
-      <MovingShadowOverlay />
-      <View style={styles.scrim} pointerEvents="none" />
+      <AppAtmosphere scrimOpacity={0.58} />
 
       <SafeAreaView
         style={styles.safe}
@@ -437,258 +369,258 @@ export function WelcomeScreen({ navigation }: WelcomeScreenProps) {
           style={styles.flex}
         >
           <AuthOutlineProvider>
-            <ScrollView
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={[
-                styles.scrollContent,
-                isHighlightsStep && styles.scrollContentHighlights,
-              ]}
-              showsVerticalScrollIndicator={false}
+            {/* Герой-марка живёт вне phase — не размонтируется на login/register.
+                Opacity тот же, что у кнопок intent (fade-in на месте). */}
+            <Animated.View
+              pointerEvents="none"
+              style={[styles.heroMarkLayer, { opacity: intentButtonsOpacity }]}
             >
-            <View style={styles.mainColumn}>
+              <BrandMark size={148} glow />
+            </Animated.View>
+
+            {phase === "intent" ? (
               <Animated.View
-                style={{ transform: [{ translateY: groupTranslateY }] }}
+                style={[
+                  styles.intentShell,
+                  {
+                    opacity: intentButtonsOpacity,
+                    transform: [{ translateY: intentButtonsShift }],
+                  },
+                ]}
               >
-                <View
-                  style={[
-                    styles.titleBlock,
-                    phase === "intent" && styles.titleBlockIntent,
-                    showDots && styles.titleBlockWithDots,
-                    styles.titleBlockAuth,
-                  ]}
-                >
-                  <Animated.View
-                    style={{
-                      opacity: intentTitleOpacity,
-                      overflow: "visible",
-                      transform: [
-                        { scale: titleScale },
-                        { translateY: intentTitleShift },
-                      ],
-                    }}
-                  >
-                    <BrandTitle fontSize={56} />
-                  </Animated.View>
+                <View style={styles.intentHero} />
 
-                  {showDots ? (
-                    <Animated.View
-                      style={[
-                        styles.dotsWrap,
-                        { transform: [{ scale: progressScale }] },
-                      ]}
-                    >
-                      <StepDots count={stepDotsCount} current={stepIndex} />
-                    </Animated.View>
-                  ) : null}
-                </View>
-
-                <Animated.View
-                  style={[
-                    styles.content,
-                    phase === "intent" && styles.contentIntent,
-                    {
-                      opacity: contentOpacity,
-                      transform: [{ translateX: contentShift }],
-                    },
-                  ]}
-                >
-                  {phase === "intent" ? (
-                    <Animated.View
-                      style={[
-                        styles.intentColumn,
-                        {
-                          opacity: intentButtonsOpacity,
-                          transform: [{ translateY: intentButtonsShift }],
-                        },
-                      ]}
-                    >
-                      <OutlineButton
-                        title={t("welcome.register")}
-                        onPress={goToRegister}
-                        style={styles.intentPrimaryButton}
-                        textStyle={styles.intentButtonText}
-                      />
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={t("welcome.login")}
-                        onPress={goToLogin}
-                        style={styles.intentLoginLink}
-                      >
-                        <Text style={styles.intentLoginText}>
-                          {t("welcome.login")}
-                        </Text>
-                      </Pressable>
-                    </Animated.View>
-                  ) : phase === "login" ? (
-                    <LoginContent
-                      phone={form.phone}
-                      password={form.password}
-                      focused={focused}
-                      onChange={setField}
-                      onFocus={setFocused}
-                      onBlur={() => setFocused(null)}
-                      onSubmit={completeLogin}
-                      onBack={goBack}
+                <View style={styles.intentDock}>
+                  <View style={styles.intentRow}>
+                    <SoftButton
+                      title={t("welcome.register")}
+                      onPress={goToRegister}
+                      style={styles.intentRowButton}
+                      textStyle={styles.intentButtonText}
                     />
-                  ) : isAccountStep ? (
-                    <>
-                      <View style={styles.form}>
-                        <PhoneField
-                          value={form.phone}
-                          focused={focused === "phone"}
-                          onChangeText={(text) => setField("phone", text)}
-                          onFocus={() => setFocused("phone")}
-                          onBlur={() => setFocused(null)}
-                        />
-                        <FormField
-                          field={LOGIN_PASSWORD_FIELD}
-                          value={form.password}
-                          focused={focused === "password"}
-                          onChangeText={(text) => setField("password", text)}
-                          onFocus={() => setFocused("password")}
-                          onBlur={() => setFocused(null)}
-                        />
-                        <RoleCheckboxes
-                          role={role}
-                          onChange={chooseRole}
-                          layout="row"
-                          compact
-                        />
-                      </View>
+                    <SoftButton
+                      title={t("welcome.login")}
+                      onPress={goToLogin}
+                      style={styles.intentRowButton}
+                      textStyle={styles.intentButtonText}
+                    />
+                  </View>
+                  <View style={styles.orRow}>
+                    <View style={styles.orLine} />
+                    <Text style={styles.orText}>{t("welcome.orDivider")}</Text>
+                    <View style={styles.orLine} />
+                  </View>
+                  <SocialAuthButtons size="lg" onPress={completeLogin} />
+                </View>
+              </Animated.View>
+            ) : (
+              <ScrollView
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={[
+                  styles.scrollContent,
+                  isHighlightsStep && styles.scrollContentHighlights,
+                ]}
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={styles.mainColumn}>
+                  <Animated.View
+                    style={[
+                      styles.authBody,
+                      {
+                        opacity: contentOpacity,
+                        transform: [{ translateX: contentShift }],
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.titleBlock,
+                        showDots && styles.titleBlockWithDots,
+                        isHighlightsStep && styles.titleBlockHighlights,
+                      ]}
+                    >
+                      {authTitleKey ? (
+                        <Text style={styles.authTitle}>{t(authTitleKey)}</Text>
+                      ) : null}
 
-                      <AuthCtaRow
-                        title={registerCtaLabel}
-                        onPress={goNextRegister}
-                        onBack={goBack}
-                        disabled={ctaDisabled}
-                        style={styles.cta}
-                      />
-
-                      <View style={styles.socialBlock}>
-                        <SocialAuthButtons onPress={completeRegister} />
-                      </View>
-                    </>
-                  ) : currentStep?.kind === "verify" ? (
-                    <>
-                      <Text style={[styles.helper, styles.verifyHint]}>
-                        {t(currentStep.hintKey ?? "auth.verifyPhoneHint", {
-                          phone: formattedPhone,
-                        })}
-                      </Text>
-
-                      <View style={styles.verifyForm}>
-                        <OtpInput
-                          value={form.otpCode}
-                          focused={focused === "otpCode"}
-                          onChangeText={(text) => setField("otpCode", text)}
-                          onFocus={() => setFocused("otpCode")}
-                          onBlur={() => setFocused(null)}
-                        />
-                      </View>
-
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={t("auth.resendCode")}
-                        accessibilityState={{ disabled: resendingCode }}
-                        disabled={resendingCode}
-                        onPress={handleResendCode}
-                        style={styles.resendLink}
-                      >
-                        <Text
+                      {showDots ? (
+                        <Animated.View
                           style={[
-                            styles.resendLinkText,
-                            resendingCode && styles.resendLinkTextDisabled,
+                            styles.dotsWrap,
+                            { transform: [{ scale: progressScale }] },
                           ]}
                         >
-                          {t("auth.resendCode")}
-                        </Text>
-                      </Pressable>
-
-                      <AuthCtaRow
-                        title={registerCtaLabel}
-                        onPress={goNextRegister}
-                        onBack={goBack}
-                        style={styles.cta}
-                      />
-                    </>
-                  ) : currentStep?.kind === "highlights" ? (
-                    <View style={styles.highlightsStack}>
-                      <AiToolsPicker
-                        compact
-                        value={form.selectedAiTools}
-                        onChange={(value) => setField("selectedAiTools", value)}
-                      />
-                      <AiModelsPicker
-                        compact
-                        value={form.selectedAiModels}
-                        onChange={(value) => setField("selectedAiModels", value)}
-                      />
-                      <FormField
-                        field={currentStep.fields[0]}
-                        value={form.github}
-                        focused={focused === "github"}
-                        onChangeText={(text) => setField("github", text)}
-                        onFocus={() => setFocused("github")}
-                        onBlur={() => setFocused(null)}
-                      />
-                      <AuthCtaRow
-                        title={registerCtaLabel}
-                        onPress={goNextRegister}
-                        onBack={goBack}
-                        style={styles.highlightsCta}
-                      />
+                          <StepDots count={stepDotsCount} current={stepIndex} />
+                        </Animated.View>
+                      ) : null}
                     </View>
-                  ) : currentStep ? (
-                    <>
-                      {currentStep.titleKey ? (
-                        <Text style={styles.heading}>
-                          {t(currentStep.titleKey)}
-                        </Text>
-                      ) : null}
-                      {currentStep.hintKey && t(currentStep.hintKey) ? (
-                        <Text style={styles.helper}>
-                          {t(currentStep.hintKey)}
-                        </Text>
-                      ) : null}
 
-                      <View style={styles.form}>
-                        {currentStep.fields.map((field) => (
-                          <FormField
-                            key={field.key}
-                            field={field}
-                            value={form[field.key]}
-                            focused={focused === field.key}
-                            onChangeText={(text) => setField(field.key, text)}
-                            onFocus={() => setFocused(field.key)}
-                            onBlur={() => setFocused(null)}
+                    <View style={styles.content}>
+                      {phase === "login" ? (
+                        <LoginContent
+                          phone={form.phone}
+                          password={form.password}
+                          focused={focused}
+                          onChange={setField}
+                          onFocus={setFocused}
+                          onBlur={() => setFocused(null)}
+                          onSubmit={completeLogin}
+                          onBack={goBack}
+                        />
+                      ) : isAccountStep ? (
+                        <>
+                          <View style={styles.form}>
+                            <PhoneField
+                              value={form.phone}
+                              focused={focused === "phone"}
+                              onChangeText={(text) => setField("phone", text)}
+                              onFocus={() => setFocused("phone")}
+                              onBlur={() => setFocused(null)}
+                            />
+                            <FormField
+                              field={LOGIN_PASSWORD_FIELD}
+                              value={form.password}
+                              focused={focused === "password"}
+                              onChangeText={(text) =>
+                                setField("password", text)
+                              }
+                              onFocus={() => setFocused("password")}
+                              onBlur={() => setFocused(null)}
+                            />
+                            <RoleCheckboxes
+                              role={role}
+                              onChange={chooseRole}
+                              layout="row"
+                              compact
+                            />
+                          </View>
+
+                          <AuthCtaRow
+                            title={registerCtaLabel}
+                            onPress={goNextRegister}
+                            onBack={goBack}
+                            disabled={ctaDisabled}
+                            style={styles.cta}
                           />
-                        ))}
-                      </View>
-
-                      <AuthCtaRow
-                        title={registerCtaLabel}
-                        onPress={goNextRegister}
-                        onBack={goBack}
-                        style={styles.cta}
-                      />
-
-                      {currentStep.skippable ? (
-                        <Pressable
-                          accessibilityRole="button"
-                          onPress={goNextRegister}
-                          style={styles.subtleLink}
-                        >
-                          <Text style={styles.subtleLinkText}>
-                            {t("auth.skip")}
+                        </>
+                      ) : currentStep?.kind === "verify" ? (
+                        <>
+                          <Text style={[styles.helper, styles.verifyHint]}>
+                            {t(currentStep.hintKey ?? "auth.verifyPhoneHint", {
+                              phone: formattedPhone,
+                            })}
                           </Text>
-                        </Pressable>
+
+                          <View style={styles.verifyForm}>
+                            <OtpInput
+                              value={form.otpCode}
+                              focused={focused === "otpCode"}
+                              onChangeText={(text) => setField("otpCode", text)}
+                              onFocus={() => setFocused("otpCode")}
+                              onBlur={() => setFocused(null)}
+                            />
+                          </View>
+
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={t("auth.resendCode")}
+                            accessibilityState={{ disabled: resendingCode }}
+                            disabled={resendingCode}
+                            onPress={handleResendCode}
+                            style={styles.resendLink}
+                          >
+                            <Text
+                              style={[
+                                styles.resendLinkText,
+                                resendingCode && styles.resendLinkTextDisabled,
+                              ]}
+                            >
+                              {t("auth.resendCode")}
+                            </Text>
+                          </Pressable>
+
+                          <AuthCtaRow
+                            title={registerCtaLabel}
+                            onPress={goNextRegister}
+                            onBack={goBack}
+                            style={styles.cta}
+                          />
+                        </>
+                      ) : currentStep?.kind === "highlights" ? (
+                        <View style={styles.highlightsStack}>
+                          <AiModelsPicker
+                            compact
+                            value={form.selectedAiModels}
+                            onChange={(value) =>
+                              setField("selectedAiModels", value)
+                            }
+                          />
+                          <View style={styles.highlightsGit}>
+                            <FormField
+                              field={currentStep.fields[0]}
+                              value={form.github}
+                              focused={focused === "github"}
+                              onChangeText={(text) => setField("github", text)}
+                              onFocus={() => setFocused("github")}
+                              onBlur={() => setFocused(null)}
+                            />
+                          </View>
+                          <AuthCtaRow
+                            title={registerCtaLabel}
+                            onPress={goNextRegister}
+                            onBack={goBack}
+                            style={styles.highlightsCta}
+                          />
+                        </View>
+                      ) : currentStep ? (
+                        <>
+                          {currentStep.hintKey && t(currentStep.hintKey) ? (
+                            <Text style={styles.helper}>
+                              {t(currentStep.hintKey)}
+                            </Text>
+                          ) : null}
+
+                          <View style={styles.form}>
+                            {currentStep.fields.map((field) => (
+                              <FormField
+                                key={field.key}
+                                field={field}
+                                value={form[field.key]}
+                                focused={focused === field.key}
+                                onChangeText={(text) =>
+                                  setField(field.key, text)
+                                }
+                                onFocus={() => setFocused(field.key)}
+                                onBlur={() => setFocused(null)}
+                              />
+                            ))}
+                          </View>
+
+                          <AuthCtaRow
+                            title={registerCtaLabel}
+                            onPress={goNextRegister}
+                            onBack={goBack}
+                            style={styles.cta}
+                          />
+
+                          {currentStep.skippable ? (
+                            <Pressable
+                              accessibilityRole="button"
+                              onPress={goNextRegister}
+                              style={styles.subtleLink}
+                            >
+                              <Text style={styles.subtleLinkText}>
+                                {t("auth.skip")}
+                              </Text>
+                            </Pressable>
+                          ) : null}
+                        </>
                       ) : null}
-                    </>
-                  ) : null}
-                </Animated.View>
-              </Animated.View>
-            </View>
-          </ScrollView>
+                    </View>
+                  </Animated.View>
+                </View>
+              </ScrollView>
+            )}
           </AuthOutlineProvider>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -745,10 +677,6 @@ function LoginContent({
         onBack={onBack}
         style={styles.cta}
       />
-
-      <View style={styles.socialBlock}>
-        <SocialAuthButtons onPress={onSubmit} />
-      </View>
     </>
   );
 }
@@ -758,10 +686,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  scrim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(5, 22, 48, 0.4)",
-  },
   safe: {
     flex: 1,
   },
@@ -770,30 +694,39 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    justifyContent: "center",
     paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 40,
+    paddingTop: 24,
+    paddingBottom: 24,
   },
   scrollContentHighlights: {
     paddingBottom: 24,
   },
   mainColumn: {
-    flexGrow: 1,
+    width: "100%",
+  },
+  authBody: {
+    width: "100%",
   },
   titleBlock: {
     alignItems: "center",
-    marginBottom: 22,
-    gap: 22,
+    marginBottom: 28,
+    gap: 16,
     overflow: "visible",
   },
-  titleBlockIntent: {
-    marginBottom: 12,
-  },
   titleBlockWithDots: {
-    marginBottom: 52,
+    marginBottom: 28,
   },
-  titleBlockAuth: {
-    marginTop: AUTH_TITLE_TOP,
+  titleBlockHighlights: {
+    marginBottom: 36,
+  },
+  authTitle: {
+    fontSize: 28,
+    fontWeight: "500",
+    color: colors.textPrimary,
+    letterSpacing: -0.4,
+    textAlign: "center",
+    ...font("500"),
   },
   dotsWrap: {
     alignSelf: "stretch",
@@ -802,48 +735,67 @@ const styles = StyleSheet.create({
   content: {
     alignSelf: "stretch",
   },
-  contentIntent: {
-    marginTop: 0,
-  },
   highlightsStack: {
     alignSelf: "stretch",
     gap: HIGHLIGHTS_BLOCK_GAP,
   },
-  highlightsCta: {
-    marginTop: 12,
+  highlightsGit: {
+    marginTop: 8,
   },
-  intentColumn: {
+  highlightsCta: {
+    marginTop: 8,
+  },
+  intentShell: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingBottom: 8,
+  },
+  heroMarkLayer: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: "center",
+    justifyContent: "center",
+    // Dock снизу — смещаем марку в зону intentHero, как раньше.
+    paddingBottom: 140,
+    zIndex: 0,
+  },
+  intentHero: {
+    flex: 1,
+  },
+  intentDock: {
+    alignSelf: "stretch",
+    gap: 8,
+    paddingBottom: 8,
+    zIndex: 1,
+  },
+  orRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
     alignSelf: "stretch",
   },
-  intentPrimaryButton: {
-    alignSelf: "center",
-    minWidth: 220,
-    maxWidth: 280,
+  orLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: outlineBorderColor,
   },
-  intentLoginLink: {
-    marginTop: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+  orText: {
+    fontSize: 13,
+    color: colors.textMuted,
+    ...font("400"),
+  },
+  intentRow: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    alignSelf: "stretch",
+    gap: 12,
+  },
+  intentRowButton: {
+    flex: 1,
+    minWidth: 0,
+    alignSelf: "stretch",
   },
   intentButtonText: {
     ...font("600"),
-  },
-  intentLoginText: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255, 255, 255, 0.55)",
-    paddingBottom: 1,
-    ...font("600"),
-  },
-  heading: {
-    fontSize: 26,
-    fontWeight: "500",
-    color: colors.textPrimary,
-    letterSpacing: -0.4,
-    marginBottom: 8,
-    ...font("500"),
   },
   helper: {
     fontSize: 15,
@@ -885,10 +837,6 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: 16,
-  },
-  socialBlock: {
-    marginTop: 20,
-    alignItems: "center",
   },
   cta: {
     marginTop: 26,

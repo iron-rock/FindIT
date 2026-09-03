@@ -7,7 +7,7 @@ import {
   View,
 } from 'react-native';
 
-import type { CandidateAnketa } from '../../data/candidateAnkety';
+import type { FinderResume } from '../../data/finderResumes';
 import { colors, Text } from '../../theme';
 import { outlineBlock, outlineBorder, outlineRadius } from '../../theme/surface';
 
@@ -17,13 +17,13 @@ const SWIPE_THRESHOLD = SCREEN_W * 0.22;
 const SWIPE_OFF = SCREEN_W * 1.35;
 
 export type CandidateSwipeCardProps = {
-  candidate: CandidateAnketa;
+  resume: FinderResume;
   onAgree: () => void;
   onDecline: () => void;
 };
 
 export function CandidateSwipeCard({
-  candidate,
+  resume,
   onAgree,
   onDecline,
 }: CandidateSwipeCardProps) {
@@ -31,8 +31,8 @@ export function CandidateSwipeCard({
 
   useEffect(() => {
     tx.setValue(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- смена только по id анкеты
-  }, [candidate.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset when resume changes
+  }, [resume.id]);
 
   const agreeOpacity = useMemo(
     () =>
@@ -122,7 +122,7 @@ export function CandidateSwipeCard({
         <View style={styles.profileRow}>
           <View style={styles.avatar}>
             <Text style={styles.avatarLetters}>
-              {candidate.displayName
+              {resume.displayName
                 .split(' ')
                 .map((p) => p[0])
                 .slice(0, 2)
@@ -130,7 +130,7 @@ export function CandidateSwipeCard({
                 .toUpperCase()}
             </Text>
           </View>
-          <Text style={styles.name}>{candidate.displayName}</Text>
+          <Text style={styles.name}>{resume.displayName}</Text>
         </View>
       </View>
     </Animated.View>

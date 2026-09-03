@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { getTemplateProfile } from '../data/templateAccounts';
 import type { RoleProfile } from '../lib/profileTypes';
@@ -9,6 +9,7 @@ export type MainSession = {
   role: UserRole;
   profile: RoleProfile;
   setRole: (role: UserRole) => void;
+  setProfile: (profile: RoleProfile) => void;
 };
 
 const MainSessionContext = createContext<MainSession | null>(null);
@@ -25,13 +26,18 @@ export function MainSessionProvider({
   const [role, setRoleState] = useState<UserRole>(initialRole);
   const [profile, setProfile] = useState<RoleProfile>(initialProfile);
 
+  useEffect(() => {
+    setRoleState(initialRole);
+    setProfile(initialProfile);
+  }, [initialRole, initialProfile]);
+
   const setRole = useCallback((nextRole: UserRole) => {
     setRoleState(nextRole);
     setProfile(getTemplateProfile(nextRole));
   }, []);
 
   const value = useMemo(
-    () => ({ role, profile, setRole }),
+    () => ({ role, profile, setRole, setProfile }),
     [role, profile, setRole],
   );
 

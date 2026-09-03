@@ -136,6 +136,14 @@ export interface VcsCommitRow {
 export type VcsCommitInsert = Pick<VcsCommitRow, 'account_id' | 'repo'> &
   Partial<Pick<VcsCommitRow, 'message' | 'sha' | 'committed_at' | 'url'>>;
 
+/** День contribution-грида (heatmap). Кэш из GitHub/GitLab API. */
+export interface VcsContributionRow {
+  account_id: Uuid;
+  day: string;
+  count: number;
+}
+export type VcsContributionInsert = VcsContributionRow;
+
 export interface SwipeRow {
   id: Uuid;
   actor_id: Uuid;
@@ -187,6 +195,7 @@ export interface FinditDatabase {
   vcs_accounts: { Row: VcsAccountRow; Insert: VcsAccountInsert };
   vcs_credentials: { Row: VcsCredentialRow; Insert: VcsCredentialRow };
   vcs_commits: { Row: VcsCommitRow; Insert: VcsCommitInsert };
+  vcs_contributions: { Row: VcsContributionRow; Insert: VcsContributionInsert };
   swipes: { Row: SwipeRow; Insert: SwipeInsert };
   matches: { Row: MatchRow; Insert: Omit<MatchRow, 'id' | 'created_at'> };
   conversations: { Row: ConversationRow; Insert: Pick<ConversationRow, 'match_id'> };

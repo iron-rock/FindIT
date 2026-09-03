@@ -2,23 +2,19 @@ import { createContext, useContext, type ReactNode } from 'react';
 import type { ViewStyle } from 'react-native';
 
 import {
-  outlineBorder,
-  outlineBorderFocused,
-  outlineBorderPressed,
-  outlineSurface,
   welcomeOutlineBorder,
   welcomeOutlineBorderFocused,
 } from '../../theme/surface';
 
 type AuthOutlineContextValue = {
-  /** Белая рамка при focus или заполнении (только на Welcome). */
+  /** Белая рамка при focus (канон текстовых инпутов). */
   fieldBorder: (focused: boolean, filled?: boolean) => ViewStyle | undefined;
   /** Белая рамка у выбранного чипа/checkbox (только на Welcome). */
   selectedBorder: ViewStyle | undefined;
 };
 
 const defaultValue: AuthOutlineContextValue = {
-  fieldBorder: (focused) => (focused ? outlineBorderFocused : undefined),
+  fieldBorder: (focused) => (focused ? welcomeOutlineBorderFocused : undefined),
   selectedBorder: undefined,
 };
 

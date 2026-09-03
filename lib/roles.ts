@@ -1,8 +1,7 @@
 /**
- * Канонические роли пользователя FindIT.
+ * Роли пользователя FindIT — единственный источник правды для кода и БД.
  *
- * Единый источник правды для всего приложения и базы данных.
- * Раньше в навигации использовались 'developer'/'employer' — теперь только эти:
+ * Других ролей нет. Значения совпадают с Postgres enum `user_role`.
  *   - finder    — соискатель / IT-специалист (смотрит вакансии)
  *   - recruiter — наниматель / компания (смотрит анкеты finder'ов)
  */
@@ -10,10 +9,10 @@ export type UserRole = 'finder' | 'recruiter';
 
 export const USER_ROLES: readonly UserRole[] = ['finder', 'recruiter'] as const;
 
-/** Человекочитаемые подписи роли для интерфейса. */
+/** Короткие подписи роли (UI-копия — в i18n `roles.*`). */
 export const ROLE_LABELS: Record<UserRole, string> = {
-  finder: 'Кандидат',
-  recruiter: 'Работодатель',
+  finder: 'Finder',
+  recruiter: 'Recruiter',
 };
 
 export function isUserRole(value: unknown): value is UserRole {

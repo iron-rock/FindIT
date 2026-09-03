@@ -15,32 +15,62 @@ import {
   outlineBorder,
   outlineBorderPressed,
   outlineBorderFocused,
+  welcomeOutlineBorderFocused,
   outlineBlock,
   outlineRadius,
   outlineSurface,
+  softSurface,
+  softSurfacePressed,
 } from '../theme/surface';
 import { OutlineButton } from '../components/ui/OutlineButton';
+import { SoftButton } from '../components/ui/SoftButton';
 ```
 
 ## Запрещено
 
 - Хардкодить `borderColor: 'rgba(255, 255, 255, 0.22)'` и `colors.borderSubtle` для видимых рамок UI
-- Дублировать стили кнопок Welcome в экранах — использовать `OutlineButton` или `outlineSurface()`
+- Дублировать стили кнопок Welcome в экранах — использовать `OutlineButton` / `SoftButton` или `outlineSurface()` / `softSurface()`
+- Подсвечивать **текстовые инпуты** голубым `outlineBorderFocused` (`accentBright`) — канон: белый `welcomeOutlineBorderFocused`
 
 ## Когда что использовать
 
 | Элемент | API |
 |---------|-----|
-| CTA-кнопка | `OutlineButton` |
-| Инпут / pressable | `outlineSurface(radius)` + `outlineBorderFocused` при focus |
+| CTA с рамкой | `OutlineButton` / `outlineSurface()` |
+| **Welcome intent (без рамки)** | `SoftButton` / `softSurface()` + `softSurfacePressed` |
+| Вход / регистрация CTA | `AuthCtaRow` → `outlineSurface()` (с рамкой) |
+| **Текстовый инпут (регистрация, профиль, стек…)** | `outlineSurface(radius)` + **`welcomeOutlineBorderFocused` только при focus** (белая рамка) |
 | Карточка / блок списка | `outlineBlock(radius)` |
 | Pressable с рамкой | `outlineBorder` + `outlineBorderPressed` |
 
-## Токены (канон)
+## Focus текстовых инпутов (канон)
+
+Как на шагах регистрации / входа:
+
+- default: `outlineSurface()` → `outlineBorderColor` `rgba(255,255,255,0.22)`
+- focus: `welcomeOutlineBorderFocused` → **белый** `colors.textPrimary`, толщина `outlineBorderWidthFocused` (1.5)
+- Не подсвечивать инпут голубым `outlineBorderFocused` / `colors.accentBright`
+- Focus только в состоянии фокуса (не «всегда on»)
+
+Компоненты-ориентиры: `FormField` / `PhoneField` (через `useAuthOutline`), `ProfileTextField`, `StackTechInput`.
+
+## Soft-кнопки (Welcome intent)
+
+Тот же размер и `outlineRadius`, что у outline-кнопок, **но без бордера** — только полупрозрачная заливка. Использовать на **intent** Welcome (Register / Login / соцряд), не на шагах входа и регистрации.
+
+- `softFill`: `rgba(255, 255, 255, 0.08)`
+- `softFillPressed`: `rgba(255, 255, 255, 0.14)`
+- Компонент: `SoftButton`
+- Соцряд на Welcome: `SocialAuthButtons` — `flex: 1` на каждую кнопку, `gap: 12` как у ряда Register/Login
+
+Не рисовать soft-кнопки локальными `backgroundColor` / без токенов из `theme/surface`.
+
+## Токены outline (канон)
 
 - `outlineBorderColor`: `rgba(255, 255, 255, 0.22)`
 - `outlineBorderColorPressed`: `rgba(255, 255, 255, 0.4)`
-- `outlineBorderColorFocused`: `colors.accentBright`
+- `outlineBorderColorFocused`: `colors.accentBright` — **не для текстовых инпутов**
+- `welcomeOutlineBorderColorFocused`: `colors.textPrimary` — **focus текстовых инпутов**
 - `outlineRadius`: `4` (по умолчанию)
 
 Радиус можно увеличивать локально (`outlineBlock(14)`), но **цвет и толщина рамки** — только из `theme/surface`.

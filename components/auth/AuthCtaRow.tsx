@@ -17,7 +17,7 @@ type AuthCtaRowProps = {
   style?: StyleProp<ViewStyle>;
 };
 
-/** «Назад» слева на одной линии с основной CTA-кнопкой шага. */
+/** «Назад» слева на одной линии с outline CTA (вход / регистрация). */
 export function AuthCtaRow({
   title,
   onPress,
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'stretch',
-    gap: 10,
+    gap: 12,
   },
   backSlot: {
     width: BACK_SLOT,

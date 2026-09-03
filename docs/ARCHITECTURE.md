@@ -19,7 +19,7 @@
 | Мониторинг | Sentry (`@sentry/react-native`, опционально) |
 | Точка входа | `index.ts` → `App.tsx` |
 
-Скрипты (`package.json`): `npm start` / `android` / `ios` / `web` — через `expo start`.
+Скрипты (`package.json`): `npm start` / `android` / `ios` поднимают **Expo Go** (`expo start --go`). `npm run start:dev-client` — только если на телефоне стоит EAS development build.
 
 ---
 
@@ -32,35 +32,36 @@ FindIT/
 ├─ navigation/
 │  ├─ RootNavigator.tsx     # Native-stack: Welcome → Register → Main
 │  ├─ MainNavigator.tsx     # Bottom-tabs: CandidateSwipe / Chats / Profile
-│  ├─ MainSessionContext.tsx# Контекст сессии (role + приветствие) внутри Main
+│  ├─ ChatsNavigator.tsx    # Стек: список → комната чата
+│  ├─ ProfileNavigator.tsx  # Стек: хаб профиля → настройки / оценки / вакансии
+│  ├─ MainSessionContext.tsx# Контекст сессии (role + profile + setProfile) внутри Main
 │  └─ types.ts              # Реэкспорт UserRole (lib/roles) + param-листы навигации
 ├─ screens/
 │  ├─ WelcomeScreen.tsx     # Онбординг + выбор роли
-│  ├─ RegisterScreen.tsx    # Форма регистрации (на пресетах, без реального API)
-│  ├─ CandidateSwipeScreen.tsx # Свайп анкет кандидатов (вид recruiter'а)
-│  ├─ ChatsScreen.tsx       # Список чатов (мок)
-│  └─ ProfileScreen.tsx     # Профиль + выход
+│  ├─ CandidateSwipeScreen.tsx # Свайп (ветвление по роли)
+│  ├─ ChatsScreen.tsx / ChatRoomScreen.tsx
+│  ├─ ProfileScreen.tsx     # Хаб профиля (= резюме) + меню
+│  ├─ ProfileSettingsScreen.tsx
+│  ├─ ProfileRatingsScreen.tsx
+│  └─ ProfileVacanciesScreen.tsx
 ├─ components/
-│  ├─ swipe/CandidateSwipeCard.tsx     # Карточка резюме в свайпе
-│  ├─ navigation/MainTabBar.tsx          # Кастомный таб-бар (pill, 3 таба)
-│  ├─ icons/FabRouteGlyph.tsx
-│  └─ dev/DevPanel.tsx      # Dev-панель: вход/выход + смена роли через Supabase
-├─ contexts/
-│  └─ SupabaseAuthContext.tsx # Провайдер сессии Supabase (session/user/initializing)
+│  ├─ profile/              # Avatar, Brick, GitProfileBlock, Finder/Recruiter body
+│  ├─ swipe/                # CandidateSwipeCard, VacancySwipeCard
+│  ├─ navigation/MainTabBar.tsx
+│  └─ ui/GlassSurface.tsx / OutlineButton / SoftButton
 ├─ lib/
-│  ├─ roles.ts              # Канон UserRole ('finder'|'recruiter') + ROLE_LABELS + guard
-│  ├─ supabase.ts           # Клиент Supabase + проверка конфигурации
-│  ├─ devAuth.ts            # Dev-вход, setAccountRole, readAccountRole
-│  ├─ database.types.ts     # TS-типы строк/вставок под схему БД
-│  └─ sentry.ts             # Инициализация Sentry (опционально)
+│  ├─ resumeCardTheme.ts    # Path A: темы карточки свайпа + JSON parse stub
+│  ├─ profileTypes.ts       # FinderProfile / RecruiterProfile
+│  ├─ git.ts                # FinderGit: ссылка, connection, коммиты, heatmap
+│  └─ …
 ├─ data/
-│  ├─ candidateAnkety.ts    # Мок-анкеты кандидатов (лента свайпа)
+│  ├─ finderResumes.ts      # Мок-резюме finder'ов (лента свайпа recruiter'а)
 │  └─ registerPresets.ts    # Стартовые значения формы регистрации по роли
 ├─ theme/
 │  ├─ colors.ts             # Тёмная палитра (#051630 …)
 │  └─ index.ts
 ├─ assets/                  # Логотипы, иконки
-├─ supabase/migrations/     # SQL-миграции (0001_initial_schema.sql)
+├─ supabase/migrations/     # SQL-миграции (0001_initial_schema, 0002_vcs_contributions)
 └─ docs/                    # Документация (этот каталог)
 ```
 
@@ -73,15 +74,15 @@ RootNavigator (native-stack, тёмная тема)
 ├─ Welcome            # выбор роли → navigate('Register', { role })
 ├─ Register           # форма → replace('Main', { role, greetingTitle, greetingSubtitle })
 └─ Main (MainNavigator, bottom-tabs, кастомный таб-бар)
-   ├─ CandidateSwipe  # initialRoute, лента анкет (мок candidateAnkety)
-   ├─ Chats           # мок-диалоги
-   └─ Profile         # данные сессии + «Выйти» (reset к Welcome)
+   ├─ CandidateSwipe  # initialRoute, лента по роли (мок)
+   ├─ Chats           # ChatsNavigator
+   └─ Profile         # ProfileNavigator: Hub → Settings / Ratings / Vacancies
 ```
 
-- Роль и приветствие прокидываются параметрами навигации и доступны через
-  `useMainSession()` (`MainSessionContext`).
-- Выход (`ProfileScreen`) делает `reset` стека к `Welcome` — это UI-выход, не
-  связанный с Supabase-сессией.
+- Роль и профиль прокидываются параметрами навигации и доступны через
+  `useMainSession()` (`role`, `profile`, `setRole`, `setProfile`).
+- Выход — в **Настройках** профиля: `reset` стека к `Welcome` (UI-выход, не
+  связанный с Supabase-сессией).
 
 ---
 
@@ -98,7 +99,8 @@ RootNavigator (native-stack, тёмная тема)
     upsert в таблицу `profiles`;
   - `readAccountRole(user)` — читает роль из метаданных.
 - `components/dev/DevPanel.tsx` — видимая только в `__DEV__` выезжающая панель
-  справа: вход/выход и переключение роли finder/recruiter.
+  справа: верхние кнопки открывают мок-профили `finder` / `recruiter` (без auth,
+  шаблон из `data/templateAccounts.ts`, сразу вкладка Профиль); ниже — вход/выход.
 
 > Важно: основной навигационный поток (Welcome→Register→Main) **сейчас не завязан**
 > на реальную Supabase-сессию — он работает на мок-данных и параметрах навигации.
@@ -135,13 +137,14 @@ RootNavigator (native-stack, тёмная тема)
 
 ## 7. Технический долг и важные заметки для агента
 
-1. ✅ **Роли унифицированы.** Канон `finder`/`recruiter` во всём коде; единый тип в
-   `lib/roles.ts`, навигация реэкспортирует его. (Сделано.)
-2. **Свайп finder'а отсутствует.** Реализован только свайп анкет (вид recruiter'а).
+1. ✅ **Роли.** Только `finder` / `recruiter`: тип `UserRole` в `lib/roles.ts`,
+   реэкспорт в навигации, enum `user_role` в БД. Других ролей нет.
+2. **Свайп finder'а отсутствует.** Реализован только свайп резюме (вид recruiter'а).
    Нужен экран свайпа **вакансий** для finder'а + модель/мок вакансий. Главный
    свайп-экран должен ветвиться по роли.
-3. **Персонализация резюме не реализована.** Нет секции ИИ-опыта, привязки
-   GitHub/GitLab с таблицей коммитов и линковки проектов (см. `DATA_MODEL.md`).
+3. **Персонализация резюме.** Секция Git: ссылка (GitHub/GitLab автодетект + иконка),
+   опциональный contribution-грид и таблица коммитов (`FinderProfile.git`,
+   `GitProfileBlock`). Реальный синк в `vcs_*` — позже.
 4. **Auth-гейтинг.** Основной поток не использует Supabase-сессию для входа — при
    интеграции бэкенда добавить гейтинг по `SupabaseAuthContext` + роли.
 5. **Чаты и мэтчи — мок.** `ChatsScreen` на статичных данных; модели мэтчей нет.

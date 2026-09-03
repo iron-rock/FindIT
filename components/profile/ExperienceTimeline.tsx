@@ -58,21 +58,23 @@ export function ExperienceTimeline({ yearsExperience, experience }: ExperienceTi
 
 const styles = StyleSheet.create({
   root: {
-    gap: 12,
+    gap: 10,
   },
   summary: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '500',
     color: colors.textPrimary,
   },
   list: {
     gap: 0,
+    marginHorizontal: -4,
   },
   item: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 14,
-    padding: 16,
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
   },
   itemBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -80,18 +82,18 @@ const styles = StyleSheet.create({
   },
   itemBody: {
     flex: 1,
-    gap: 3,
+    gap: 2,
   },
   title: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: colors.textPrimary,
-    lineHeight: 22,
+    lineHeight: 20,
   },
   company: {
     fontSize: 14,
     color: colors.textPrimary,
-    lineHeight: 20,
+    lineHeight: 19,
   },
   meta: {
     fontSize: 13,

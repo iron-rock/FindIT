@@ -42,7 +42,7 @@
 WelcomeScreen (intent → login / register)
   → navigation.replace('Main', { role, profile })   // без реальной сессии
 MainNavigator → MainSessionContext (template profile)
-  → CandidateSwipe (мок: candidateAnkety / vacancies)
+  → CandidateSwipe (мок: finderResumes / vacancies)
   → Chats (мок + частичный Supabase для messages)
   → Profile (signOut = reset на Welcome, без supabase.auth.signOut)
 ```
@@ -232,10 +232,12 @@ mapFormToDbInserts(form, role): ...     // для регистрации
 | `lib/profileTypes.ts` | БД |
 |-----------------------|-----|
 | `FinderProfile.displayName` | `profiles.display_name` |
-| `FinderProfile.headline` | `finder_profiles.headline` |
+| `FinderProfile.location` | `profiles.location_country` + `profiles.location_city` |
+| `FinderProfile.position` | `finder_profiles.headline` (временно; колонка грейда deprecated) |
+| `FinderProfile.about` | `finder_profiles.about` |
 | `FinderProfile.stack` | `finder_profiles.stack` |
 | `FinderProfile.selectedAiTools` | `ai_experience.tool` (filter tools) |
-| `FinderProfile.gitlabUrl` | `vcs_accounts.profile_url` |
+| `FinderProfile.git` | `vcs_accounts` + `vcs_commits` + `vcs_contributions` |
 | `FinderProfile.experience[]` | **нет таблицы** — пока mock / будущая `work_experience` |
 | `RecruiterProfile.companyName` | `companies.name` |
 | `RecruiterProfile.contactName` | `profiles.display_name` |
@@ -277,7 +279,7 @@ ORDER BY fp.updated_at DESC
 LIMIT 20;
 ```
 
-**Файлы:** новый `lib/swipeService.ts`, `screens/CandidateSwipeScreen.tsx`, `data/candidateAnkety.ts` → fallback.
+**Файлы:** новый `lib/swipeService.ts`, `screens/CandidateSwipeScreen.tsx`, `data/finderResumes.ts` → fallback.
 
 ### 5.2 Finder → vacancies
 

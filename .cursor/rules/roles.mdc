@@ -1,0 +1,33 @@
+---
+description: Единственные роли FindIT — finder и recruiter
+globs: **/*.{ts,tsx,sql,md}
+alwaysApply: true
+---
+
+# Роли FindIT
+
+В продукте, коде, UI и базе данных есть **ровно две** роли:
+
+- `finder` — соискатель / IT-специалист (свайпает вакансии)
+- `recruiter` — наниматель / компания (свайпает анкеты finder'ов)
+
+## Тип
+
+```typescript
+import type { UserRole } from '../lib/roles';
+// UserRole = 'finder' | 'recruiter'
+```
+
+Источник правды: `lib/roles.ts`. Навигация реэкспортирует тот же тип.
+В Postgres — enum `user_role` с теми же значениями.
+
+## Запрещено
+
+- Вводить другие роли или синонимы как тип/enum/поле: `developer`, `employer`, `candidate`, `specialist`
+- Маппить старые имена (`developer` ≡ `finder` и т.п.) — их больше нет
+- Дублировать union `'finder' | 'recruiter'` вместо `UserRole`
+
+Подписи в UI (`i18n` `roles.finder` / `roles.recruiter`) тоже Finder / Recruiter.
+«Кандидат», «работодатель», «разработчик» — не имена роли.
+
+Резюме finder'а в моках называй `FinderResume` (`data/finderResumes.ts`), не `Candidate*` и не `Anketa`.

@@ -1,22 +1,20 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Image } from 'expo-image';
-import type { ImageSourcePropType } from 'react-native';
+import type { ImageSourcePropType, LayoutChangeEvent } from 'react-native';
 import {
   Animated,
   Easing,
   Pressable,
   StyleSheet,
-  useWindowDimensions,
   View,
 } from 'react-native';
 
 import { colors, font, Text } from '../../theme';
-import { outlineBorderWidth, outlineFill, outlineRadius } from '../../theme/surface';
-import { useAuthOutline } from './AuthOutlineContext';
+import { outlineFill, outlineRadius, softFill } from '../../theme/surface';
 
 const COMPACT_COLS = 3;
 const COMPACT_GAP = 4;
-const COMPACT_H_PADDING = 48;
+const DENSE_GAP = 3;
 const SELECT_ANIM_MS = 240;
 const DISABLED_OPACITY = 0.4;
 
@@ -29,12 +27,17 @@ export type LogoChipItem = {
 };
 
 type LogoChipGridProps = {
-  hint: string;
+  /** Если не передан — заголовок над сеткой не рисуется (например, текст уже в divider). */
+  hint?: string;
   items: LogoChipItem[];
   value: string;
   max: number;
   onChange: (value: string) => void;
   compact?: boolean;
+  /** Ещё плотнее: для edit в профиле. */
+  dense?: boolean;
+  /** Вертикальный gap в compact-сетке (по умолчанию = column gap). */
+  compactRowGap?: number;
 };
 
 type LogoChipProps = {
@@ -42,6 +45,7 @@ type LogoChipProps = {
   selected: boolean;
   disabled: boolean;
   compact: boolean;
+  dense: boolean;
   width?: number;
   onPress: () => void;
 };
@@ -64,12 +68,17 @@ function toggleSelected(value: string, id: string, max: number): string {
   return [...selected, id].join(',');
 }
 
-function LogoChip({ item, selected, disabled, compact, width, onPress }: LogoChipProps) {
-  const { selectedBorder } = useAuthOutline();
+function LogoChip({
+  item,
+  selected,
+  disabled,
+  compact,
+  dense,
+  width,
+  onPress,
+}: LogoChipProps) {
   const selection = useRef(new Animated.Value(selected ? 1 : 0)).current;
   const gridOpacity = useRef(new Animated.Value(disabled ? DISABLED_OPACITY : 1)).current;
-  const activeBorderColor =
-    (selectedBorder?.borderColor as string | undefined) ?? colors.textPrimary;
 
   useEffect(() => {
     Animated.timing(selection, {
@@ -89,14 +98,9 @@ function LogoChip({ item, selected, disabled, compact, width, onPress }: LogoChi
     }).start();
   }, [disabled, gridOpacity]);
 
-  const borderColor = selection.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['rgba(255, 255, 255, 0)', activeBorderColor],
-  });
-
   const fillColor = selection.interpolate({
     inputRange: [0, 1],
-    outputRange: ['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.04)'],
+    outputRange: ['rgba(255, 255, 255, 0)', softFill],
   });
 
   const labelColor = selection.interpolate({
@@ -117,11 +121,10 @@ function LogoChip({ item, selected, disabled, compact, width, onPress }: LogoChi
           style={[
             styles.chip,
             compact && styles.chipCompact,
+            dense && styles.chipDense,
             compact && width != null && { width, maxWidth: width },
-            styles.chipBorder,
             {
               borderRadius: outlineRadius,
-              borderColor,
               backgroundColor: fillColor,
             },
           ]}
@@ -129,13 +132,18 @@ function LogoChip({ item, selected, disabled, compact, width, onPress }: LogoChi
           <Image
             source={item.logo}
             accessibilityLabel={item.id}
-            style={[styles.logo, compact && styles.logoCompact]}
+            style={[
+              styles.logo,
+              compact && styles.logoCompact,
+              dense && styles.logoDense,
+            ]}
             contentFit="contain"
           />
           <AnimatedText
             style={[
               styles.chipLabel,
               compact && styles.chipLabelCompact,
+              dense && styles.chipLabelDense,
               selected && styles.chipLabelSelected,
               { color: labelColor },
             ]}
@@ -157,20 +165,43 @@ export function LogoChipGrid({
   max,
   onChange,
   compact = false,
+  dense = false,
+  compactRowGap,
 }: LogoChipGridProps) {
-  const { width: windowWidth } = useWindowDimensions();
+  const [trackWidth, setTrackWidth] = useState(0);
   const selectedCount = value ? value.split(',').filter(Boolean).length : 0;
   const atLimit = selectedCount >= max;
+  const colGap = dense ? DENSE_GAP : COMPACT_GAP;
+  const rowGap = compactRowGap ?? colGap;
 
-  const compactChipWidth = Math.floor(
-    (windowWidth - COMPACT_H_PADDING - COMPACT_GAP * (COMPACT_COLS - 1)) / COMPACT_COLS,
-  );
+  const onTrackLayout = (event: LayoutChangeEvent) => {
+    const next = Math.floor(event.nativeEvent.layout.width);
+    if (next > 0 && next !== trackWidth) {
+      setTrackWidth(next);
+    }
+  };
+
+  const compactChipWidth =
+    compact && trackWidth > 0
+      ? Math.floor((trackWidth - colGap * (COMPACT_COLS - 1)) / COMPACT_COLS)
+      : undefined;
 
   return (
-    <View style={styles.fieldGroup}>
-      <Text style={styles.label}>{hint}</Text>
+    <View style={[styles.fieldGroup, dense && styles.fieldGroupDense]}>
+      {hint ? <Text style={styles.label}>{hint}</Text> : null}
 
-      <View style={[styles.grid, compact && styles.gridCompact]}>
+      <View
+        onLayout={onTrackLayout}
+        style={[
+          styles.grid,
+          compact
+            ? {
+                columnGap: colGap,
+                rowGap,
+              }
+            : styles.gridDefault,
+        ]}
+      >
         {items.map((item) => {
           const selected = parseSelected(value).includes(item.id);
           const disabled = !selected && atLimit;
@@ -182,7 +213,8 @@ export function LogoChipGrid({
               selected={selected}
               disabled={disabled}
               compact={compact}
-              width={compact ? compactChipWidth : undefined}
+              dense={dense}
+              width={compactChipWidth}
               onPress={() => onChange(toggleSelected(value, item.id, max))}
             />
           );
@@ -194,23 +226,27 @@ export function LogoChipGrid({
 
 const styles = StyleSheet.create({
   fieldGroup: {
-    gap: 8,
+    gap: 12,
+  },
+  fieldGroupDense: {
+    gap: 6,
   },
   label: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '400',
-    color: colors.textPrimary,
-    letterSpacing: 0.5,
+    color: colors.textMuted,
+    letterSpacing: 0.4,
     textTransform: 'uppercase',
+    textAlign: 'center',
+    alignSelf: 'center',
     ...font('400'),
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
   },
-  gridCompact: {
-    gap: COMPACT_GAP,
+  gridDefault: {
+    gap: 8,
   },
   chip: {
     flexDirection: 'row',
@@ -233,8 +269,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingVertical: 6,
   },
-  chipBorder: {
-    borderWidth: outlineBorderWidth,
+  chipDense: {
+    gap: 2,
+    paddingHorizontal: 2,
+    paddingVertical: 4,
   },
   logo: {
     width: 22,
@@ -243,6 +281,10 @@ const styles = StyleSheet.create({
   logoCompact: {
     width: 20,
     height: 20,
+  },
+  logoDense: {
+    width: 18,
+    height: 18,
   },
   chipLabel: {
     flex: 1,
@@ -255,6 +297,10 @@ const styles = StyleSheet.create({
     fontSize: 10,
     lineHeight: 12,
     textAlign: 'center',
+  },
+  chipLabelDense: {
+    fontSize: 9,
+    lineHeight: 11,
   },
   chipLabelSelected: {
     fontWeight: '500',

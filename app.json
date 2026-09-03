@@ -2,6 +2,7 @@
   "expo": {
     "name": "FindIT",
     "slug": "findit",
+    "scheme": "findit",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/LogoFinal.png",

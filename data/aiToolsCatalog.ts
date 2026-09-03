@@ -10,22 +10,15 @@ export type AiToolCatalogItem = {
 
 export const MAX_SELECTED_AI_TOOLS = 2;
 
-/** Популярные AI-инструменты (белые лого WebP). Порядок = по алфавиту. */
+/**
+ * Самые популярные AI IDE / coding assistants.
+ * 6 шт. = 2×3: ряд 1 — Cursor, Claude Code, Codex; ряд 2 — остальное.
+ */
 export const AI_TOOLS_CATALOG: AiToolCatalogItem[] = [
   {
-    id: 'amazonQ',
-    nameKey: 'register.finder.aiToolsCatalog.amazonQ',
-    logo: require('../assets/ai-tools/amazonQ.webp'),
-  },
-  {
-    id: 'antigravity',
-    nameKey: 'register.finder.aiToolsCatalog.antigravity',
-    logo: require('../assets/ai-tools/antigravity.webp'),
-  },
-  {
-    id: 'chatgpt',
-    nameKey: 'register.finder.aiToolsCatalog.chatgpt',
-    logo: require('../assets/ai-tools/chatgpt.webp'),
+    id: 'cursor',
+    nameKey: 'register.finder.aiToolsCatalog.cursor',
+    logo: require('../assets/ai-tools/cursor.webp'),
   },
   {
     id: 'claude',
@@ -38,14 +31,9 @@ export const AI_TOOLS_CATALOG: AiToolCatalogItem[] = [
     logo: require('../assets/ai-tools/codex.webp'),
   },
   {
-    id: 'cursor',
-    nameKey: 'register.finder.aiToolsCatalog.cursor',
-    logo: require('../assets/ai-tools/cursor.webp'),
-  },
-  {
-    id: 'gemini',
-    nameKey: 'register.finder.aiToolsCatalog.gemini',
-    logo: require('../assets/ai-tools/gemini.webp'),
+    id: 'antigravity',
+    nameKey: 'register.finder.aiToolsCatalog.antigravity',
+    logo: require('../assets/ai-tools/antigravity.webp'),
   },
   {
     id: 'githubCopilot',
@@ -56,21 +44,6 @@ export const AI_TOOLS_CATALOG: AiToolCatalogItem[] = [
     id: 'jetbrainsAi',
     nameKey: 'register.finder.aiToolsCatalog.jetbrainsAi',
     logo: require('../assets/ai-tools/jetbrainsAi.webp'),
-  },
-  {
-    id: 'microsoftCopilot',
-    nameKey: 'register.finder.aiToolsCatalog.microsoftCopilot',
-    logo: require('../assets/ai-tools/microsoftCopilot.webp'),
-  },
-  {
-    id: 'replit',
-    nameKey: 'register.finder.aiToolsCatalog.replit',
-    logo: require('../assets/ai-tools/replit.webp'),
-  },
-  {
-    id: 'windsurf',
-    nameKey: 'register.finder.aiToolsCatalog.windsurf',
-    logo: require('../assets/ai-tools/windsurf.webp'),
   },
 ];
 

@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { CandidateSwipeCard } from "../components/swipe/CandidateSwipeCard";
 import { VacancySwipeCard } from "../components/swipe/VacancySwipeCard";
-import { candidateAnkety } from "../data/candidateAnkety";
+import { finderResumes } from "../data/finderResumes";
 import { vacancies } from "../data/vacancies";
 import { useMainSession } from "../navigation/MainSessionContext";
 import type { MainTabParamList } from "../navigation/types";
@@ -36,14 +36,14 @@ export function CandidateSwipeScreen(_props: CandidateSwipeScreenProps) {
   const [index, setIndex] = useState(0);
 
   const isFinder = role === "finder";
-  const deckLength = isFinder ? vacancies.length : candidateAnkety.length;
+  const deckLength = isFinder ? vacancies.length : finderResumes.length;
 
   useEffect(() => {
     setIndex(0);
   }, [role]);
 
-  const currentCandidate = !isFinder ? candidateAnkety[index] : undefined;
-  const nextCandidate = !isFinder ? candidateAnkety[index + 1] : undefined;
+  const currentResume = !isFinder ? finderResumes[index] : undefined;
+  const nextResume = !isFinder ? finderResumes[index + 1] : undefined;
   const currentVacancy = isFinder ? vacancies[index] : undefined;
   const nextVacancy = isFinder ? vacancies[index + 1] : undefined;
 
@@ -53,7 +53,7 @@ export function CandidateSwipeScreen(_props: CandidateSwipeScreenProps) {
 
   const rewind = () => setIndex(0);
 
-  const empty = isFinder ? !currentVacancy : !currentCandidate;
+  const empty = isFinder ? !currentVacancy : !currentResume;
   const topPad = Math.max(insets.top, 10);
   const { height: windowH } = useWindowDimensions();
 
@@ -70,7 +70,7 @@ export function CandidateSwipeScreen(_props: CandidateSwipeScreenProps) {
 
   const behindLabel = isFinder
     ? nextVacancy?.title
-    : nextCandidate?.displayName;
+    : nextResume?.displayName;
 
   return (
     <View style={[styles.root, { paddingTop: topPad }]}>
@@ -158,10 +158,10 @@ export function CandidateSwipeScreen(_props: CandidateSwipeScreenProps) {
                 onDecline={advance}
               />
             ) : null}
-            {!isFinder && currentCandidate ? (
+            {!isFinder && currentResume ? (
               <CandidateSwipeCard
-                key={currentCandidate.id}
-                candidate={currentCandidate}
+                key={currentResume.id}
+                resume={currentResume}
                 onAgree={advance}
                 onDecline={advance}
               />
@@ -194,7 +194,7 @@ export function CandidateSwipeScreen(_props: CandidateSwipeScreenProps) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.surfaceDeep,
+    backgroundColor: "transparent",
     paddingHorizontal: 14,
   },
   filterHeaderRow: {

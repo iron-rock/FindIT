@@ -54,6 +54,12 @@ type GlassSurfaceProps = {
   borderColor?: string;
   /** Без outline-рамки (tab bar, full-bleed строки списка). */
   borderless?: boolean;
+  /**
+   * `auto` — Liquid Glass если доступен (таб-бар, единичные контролы).
+   * `static` — только Blur / тёмная заливка: для списков и нескольких панелей
+   * на экране. Стек Liquid Glass белеет и «залипает» active на соседних View.
+   */
+  effect?: 'auto' | 'static';
   onLayout?: (event: LayoutChangeEvent) => void;
 };
 
@@ -73,10 +79,12 @@ export function GlassSurface({
   highlight = false,
   borderColor,
   borderless = false,
+  effect = 'auto',
   onLayout,
 }: GlassSurfaceProps) {
   const ringColor =
     borderColor ?? (highlight ? outlineBorderColorFocused : outlineBorderColor);
+  const allowLiquid = effect === 'auto' && useLiquidGlass;
 
   const ring = borderless ? null : (
     <View
@@ -99,11 +107,12 @@ export function GlassSurface({
     />
   ) : null;
 
-  if (useLiquidGlass) {
+  if (allowLiquid) {
     return (
       <GlassView
         glassEffectStyle="regular"
         colorScheme="dark"
+        isInteractive={false}
         onLayout={onLayout}
         style={[
           styles.clip,
@@ -131,7 +140,7 @@ export function GlassSurface({
         ]}
       >
         <BlurView
-          intensity={55}
+          intensity={40}
           tint="systemThinMaterialDark"
           style={StyleSheet.absoluteFill}
         />

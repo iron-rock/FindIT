@@ -3,16 +3,17 @@
 Схема БД под продукт из
 [`FINDIT_PRODUCT_CONTEXT.md`](./FINDIT_PRODUCT_CONTEXT.md).
 
-> 📦 **Готовый SQL:** [`supabase/migrations/0001_initial_schema.sql`](../supabase/migrations/0001_initial_schema.sql)
-> — создаёт все таблицы ниже + enum'ы + RLS. Применяется через SQL Editor или
-> `supabase db push`. TS-типы строк/вставок — [`lib/database.types.ts`](../lib/database.types.ts).
+> 📦 **SQL:** [`0001_initial_schema.sql`](../supabase/migrations/0001_initial_schema.sql)
+> (таблицы + enum'ы + RLS) и [`0002_vcs_contributions.sql`](../supabase/migrations/0002_vcs_contributions.sql)
+> (heatmap). TS-типы — [`lib/database.types.ts`](../lib/database.types.ts).
 
 Статус: SQL подготовлен, но в приложении пока реально используется только
 `profiles.role` (пишется из `lib/devAuth.ts`). Остальное подключается на этапе
 интеграции бэкенда (см. [`ROADMAP.md`](./ROADMAP.md)).
 
-> Канон ролей: **`finder`** и **`recruiter`** (см. `AGENTS.md`). Все ссылки на
-> пользователя — на `auth.users(id)` Supabase. Включать **RLS** на всех таблицах.
+> Роли: только **`finder`** и **`recruiter`** (enum `user_role`, тип `UserRole`
+> в `lib/roles.ts`). Других ролей нет. Все ссылки на пользователя — на
+> `auth.users(id)` Supabase. Включать **RLS** на всех таблицах.
 
 ---
 
@@ -25,7 +26,8 @@ auth.users (Supabase)
         │     ├─ projects (1:N)
         │     ├─ vcs_accounts (1:N)  github/gitlab (публичные поля)
         │     │     ├─ vcs_credentials (1:1, токены — только service_role)
-        │     │     └─ vcs_commits (1:N, кэш последних коммитов)
+        │     │     ├─ vcs_commits (1:N, кэш последних коммитов)
+        │     │     └─ vcs_contributions (кэш heatmap по дням)
         │     └─ ai_experience (1:N)  опыт с ИИ-агентами
         └─ companies (1:N, если role=recruiter)
               └─ vacancies (1:N)
@@ -42,9 +44,11 @@ swipes (finder↔vacancy и recruiter↔finder)
 | Колонка | Тип | Заметки |
 |--------|-----|--------|
 | `id` | `uuid` PK | = `auth.users.id` |
-| `role` | `text` | `'finder' \| 'recruiter'` (CHECK) |
+| `role` | `user_role` | enum `'finder' \| 'recruiter'` |
 | `display_name` | `text` | |
 | `avatar_url` | `text` | |
+| `location_country` | `text` | свободный текст страны; клиент: `ProfileLocation.country` |
+| `location_city` | `text` | свободный текст города; клиент: `ProfileLocation.city` (оба обязательны) |
 | `created_at` | `timestamptz` | default `now()` |
 
 > Сейчас `setAccountRole()` делает `upsert({ id, role })`. Дублирование роли в
@@ -55,18 +59,18 @@ swipes (finder↔vacancy и recruiter↔finder)
 |--------|-----|--------|
 | `id` | `uuid` PK | |
 | `profile_id` | `uuid` FK→profiles | unique |
-| `headline` | `text` | заголовок/грейд |
+| `headline` | `text` | ~~грейд~~ — deprecated; в UI не используется (позиция — отдельное поле) |
 | `years_experience` | `int` | |
 | `stack` | `text[]` | теги технологий |
-| `salary_expectation` | `text` | вилка |
-| `location_format` | `text` | офис/гибрид/удалёнка + город |
-| `about` | `text` | «о себе» |
+| `salary_expectation` | `text` | цифры + `$` в UI клиента |
+| `location_format` | `text` | CSV: `online` / `hybrid` / `offline` (мультивыбор) |
+| `about` | `text` | письмо «о себе» finder'а; видно recruiter'ам при отклике (`FinderProfile.about`) |
 | `highlights` | `text[]` | якорные факты |
 | `is_searchable` | `bool` | виден ли в ленте recruiter'ов |
 
-> Соответствует мок-типу `CandidateAnketa` в `data/candidateAnkety.ts`.
+> Соответствует мок-типу `FinderResume` в `data/finderResumes.ts` (резюме finder'а, не отдельная роль).
 
-### `companies` (работодатель)
+### `companies` (компания recruiter'а)
 | Колонка | Тип |
 |--------|-----|
 | `id` | `uuid` PK |
@@ -147,8 +151,16 @@ swipes (finder↔vacancy и recruiter↔finder)
 | `committed_at` | `timestamptz` | |
 | `url` | `text` | ссылка на коммит |
 
-> Коммиты подтягиваются фоновым джобом / Edge Function через GitHub/GitLab API и
-> кэшируются здесь, чтобы профиль рендерился быстро и без токенов в клиенте.
+### `vcs_contributions` — кэш contribution-грида (heatmap)
+| Колонка | Тип | Заметки |
+|--------|-----|--------|
+| `account_id` | `uuid` FK→vcs_accounts | PK вместе с `day` |
+| `day` | `date` | день UTC |
+| `count` | `int` | число вкладов за день (≥ 0) |
+
+> Коммиты и heatmap подтягиваются фоновым джобом / Edge Function через GitHub/GitLab API
+> и кэшируются здесь, чтобы профиль рендерился быстро и без токенов в клиенте.
+> Миграция: [`0002_vcs_contributions.sql`](../supabase/migrations/0002_vcs_contributions.sql).
 
 ---
 
@@ -199,7 +211,8 @@ swipes (finder↔vacancy и recruiter↔finder)
 | Сейчас в коде | Будущее в БД |
 |---------------|--------------|
 | `profiles.role` (пишется в `devAuth.ts`) | `profiles` |
-| `data/candidateAnkety.ts` (мок) | `finder_profiles` + связанные |
+| `data/finderResumes.ts` (мок) | `finder_profiles` + связанные |
+| `FinderProfile.git` (мок: ссылка + connect) | `vcs_accounts` + `vcs_commits` + `vcs_contributions` |
 | `data/registerPresets.ts` (мок) | данные регистрации → `profiles`/`companies` |
 | мок-диалоги в `ChatsScreen` | `conversations` + `messages` |
 | — (нет) | `vacancies`, `swipes`, `matches`, `projects`, `vcs_*`, `ai_experience` |

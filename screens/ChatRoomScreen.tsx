@@ -240,7 +240,7 @@ export function ChatRoomScreen({ route, navigation }: ChatRoomScreenProps) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.surfaceDeep,
+    backgroundColor: "transparent",
   },
   flex: {
     flex: 1,

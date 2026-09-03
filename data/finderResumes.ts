@@ -1,5 +1,5 @@
-/** Анкеты кандидатов для ленты свайпов (позже придут из API). */
-export type CandidateAnketa = {
+/** Резюме finder'ов для ленты свайпов recruiter'а (позже придут из API). Не роль. */
+export type FinderResume = {
   id: string;
   displayName: string;
   headline: string;
@@ -11,7 +11,7 @@ export type CandidateAnketa = {
   highlights: string[];
 };
 
-export const candidateAnkety: CandidateAnketa[] = [
+export const finderResumes: FinderResume[] = [
   {
     id: 'c1',
     displayName: 'Алексей Петров',

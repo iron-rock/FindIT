@@ -17,7 +17,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FabRouteGlyph } from "../icons/FabRouteGlyph";
 import { GlassSurface } from "../ui/GlassSurface";
 import { useMainSession } from "../../navigation/MainSessionContext";
+import { requestLeaveProfileIfEditing } from "../../navigation/profileLeaveGuard";
 import type { MainTabParamList } from "../../navigation/types";
+import type { UserRole } from "../../lib/roles";
 import { outlineRadiusPill, outlineRadiusTab } from "../../theme/surface";
 
 type TabName = keyof MainTabParamList;
@@ -25,15 +27,15 @@ type TabName = keyof MainTabParamList;
 const TAB_ORDER: TabName[] = ["Chats", "CandidateSwipe", "Profile"];
 
 const TAB_ICON_SIZE: Record<TabName, number> = {
-  CandidateSwipe: 36,
-  Chats: 28,
-  Profile: 29,
+  CandidateSwipe: 32,
+  Chats: 25,
+  Profile: 26,
 };
 
 const BAR_PAD = 7;
 const TAB_WIDTH = 68;
 const TAB_HEIGHT = 48;
-const TAB_GAP = 14;
+const TAB_GAP = 10;
 const TAB_STEP = TAB_WIDTH + TAB_GAP;
 const EDGE_RUBBER_BAND = 0.32;
 const BAR_PULSE_SCALE = 1.04;
@@ -92,13 +94,13 @@ function clamp(value: number, min: number, max: number): number {
 function accessibilityLabelForRoute(
   route: TabName,
   t: TFunction,
-  role: "finder" | "recruiter",
+  role: UserRole,
 ): string {
   switch (route) {
     case "CandidateSwipe":
       return role === "finder"
         ? t("tabs.feedVacancies")
-        : t("tabs.feedCandidates");
+        : t("tabs.feedFinders");
     case "Chats":
       return t("tabs.chats");
     case "Profile":
@@ -215,7 +217,20 @@ export function MainTabBar({ state, navigation }: BottomTabBarProps) {
           const targetX = nextIdx * TAB_STEP;
 
           skipNextFocusEffect.current = true;
-          navigation.navigate(TAB_ORDER[nextIdx]);
+          const nextName = TAB_ORDER[nextIdx];
+          if (focused === "Profile" && nextName !== "Profile") {
+            void requestLeaveProfileIfEditing().then((ok) => {
+              if (!ok) {
+                skipNextFocusEffect.current = false;
+                springThumb(focusedIdx * TAB_STEP, 0);
+                return;
+              }
+              navigation.navigate(nextName);
+              springThumb(targetX, gesture.vx);
+            });
+            return;
+          }
+          navigation.navigate(nextName);
 
           springThumb(targetX, gesture.vx);
         },
@@ -227,11 +242,19 @@ export function MainTabBar({ state, navigation }: BottomTabBarProps) {
           springThumb(clamp(idx, 0, TAB_ORDER.length - 1) * TAB_STEP);
         },
       }),
-    [focusedIdx, maxSlide, navigation, slideAnim, barScale],
+    [focused, focusedIdx, maxSlide, navigation, slideAnim, barScale],
   );
 
   const navigateTo = (name: TabName) => {
     if (name === focused) {
+      return;
+    }
+    if (focused === "Profile" && name !== "Profile") {
+      void requestLeaveProfileIfEditing().then((ok) => {
+        if (ok) {
+          navigation.navigate(name);
+        }
+      });
       return;
     }
     navigation.navigate(name);
@@ -243,7 +266,7 @@ export function MainTabBar({ state, navigation }: BottomTabBarProps) {
   const focusedRoute = state.routes[state.index];
   const nestedRouteName =
     focusedRoute?.name === "Chats"
-      ? getFocusedRouteNameFromRoute(focusedRoute) ?? "ChatsList"
+      ? (getFocusedRouteNameFromRoute(focusedRoute) ?? "ChatsList")
       : undefined;
   const hidden = nestedRouteName === "ChatRoom";
 
@@ -270,51 +293,54 @@ export function MainTabBar({ state, navigation }: BottomTabBarProps) {
               style={styles.barGlass}
             >
               <View style={styles.track} {...panResponder.panHandlers}>
-              <Animated.View
-                pointerEvents="none"
-                style={[
-                  styles.thumbWrap,
-                  { transform: [{ translateX: slideAnim }] },
-                ]}
-              >
-                <View style={styles.thumb} />
-              </Animated.View>
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.thumbWrap,
+                    { transform: [{ translateX: slideAnim }] },
+                  ]}
+                >
+                  <View style={styles.thumb} />
+                </Animated.View>
 
-              <View style={styles.tabsRow}>
-                {TAB_ORDER.map((name) => {
-                  const active = focused === name;
+                <View style={styles.tabsRow}>
+                  {TAB_ORDER.map((name) => {
+                    const active = focused === name;
 
-                  return (
-                    <Pressable
-                      key={name}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: active }}
-                      accessibilityLabel={accessibilityLabelForRoute(
-                        name,
-                        t,
-                        role,
-                      )}
-                      hitSlop={4}
-                      onPressIn={onBarPressIn}
-                      onPressOut={onBarPressOut}
-                      onPress={() => {
-                        if (draggingRef.current) {
-                          return;
-                        }
-                        navigateTo(name);
-                      }}
-                      style={({ pressed }) => [
-                        styles.tab,
-                        pressed && styles.tabPressed,
-                      ]}
-                    >
-                      <FabRouteGlyph route={name} size={TAB_ICON_SIZE[name]} />
-                    </Pressable>
-                  );
-                })}
+                    return (
+                      <Pressable
+                        key={name}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: active }}
+                        accessibilityLabel={accessibilityLabelForRoute(
+                          name,
+                          t,
+                          role,
+                        )}
+                        hitSlop={4}
+                        onPressIn={onBarPressIn}
+                        onPressOut={onBarPressOut}
+                        onPress={() => {
+                          if (draggingRef.current) {
+                            return;
+                          }
+                          navigateTo(name);
+                        }}
+                        style={({ pressed }) => [
+                          styles.tab,
+                          pressed && styles.tabPressed,
+                        ]}
+                      >
+                        <FabRouteGlyph
+                          route={name}
+                          size={TAB_ICON_SIZE[name]}
+                        />
+                      </Pressable>
+                    );
+                  })}
+                </View>
               </View>
-            </View>
-          </GlassSurface>
+            </GlassSurface>
           </Pressable>
         </Animated.View>
       </View>

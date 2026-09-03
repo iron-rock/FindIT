@@ -187,7 +187,7 @@ export function ChatsScreen({ navigation }: ChatsScreenProps) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.surfaceDeep,
+    backgroundColor: 'transparent',
   },
   content: {
     flexGrow: 1,

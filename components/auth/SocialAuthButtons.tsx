@@ -4,16 +4,16 @@ import { useTranslation } from "react-i18next";
 
 import { colors } from "../../theme";
 import {
-  outlineBorder,
-  outlineBorderPressed,
-  outlineFill,
   outlineRadius,
+  softSurface,
+  softSurfacePressed,
 } from "../../theme/surface";
 
 export type SocialProvider = "google" | "apple" | "linkedin";
 
 type SocialAuthButtonsProps = {
   onPress?: (provider: SocialProvider) => void;
+  size?: "md" | "lg";
 };
 
 const PROVIDERS: {
@@ -26,9 +26,18 @@ const PROVIDERS: {
   { id: "linkedin", icon: "logo-linkedin", a11yKey: "continueWithLinkedIn" },
 ];
 
-/** Ряд иконок соц. провайдеров (без «назад» — он в AuthCtaRow). */
-export function SocialAuthButtons({ onPress }: SocialAuthButtonsProps) {
+/**
+ * Ряд соц. провайдеров на всю ширину (flex + gap как у Register/Login).
+ * Soft-поверхность без рамки — тот же язык, что SoftButton на Welcome.
+ */
+export function SocialAuthButtons({
+  onPress,
+  size = "md",
+}: SocialAuthButtonsProps) {
   const { t } = useTranslation();
+  // Компактнее SoftButton: меньше вертикальный padding, иконки без клипа.
+  const icon = size === "lg" ? 20 : 18;
+  const padY = size === "lg" ? 10 : 8;
 
   if (!onPress) {
     return null;
@@ -43,12 +52,19 @@ export function SocialAuthButtons({ onPress }: SocialAuthButtonsProps) {
             accessibilityRole="button"
             accessibilityLabel={t(`auth.${provider.a11yKey}`)}
             onPress={() => onPress(provider.id)}
+            style={styles.pressable}
           >
             {({ pressed }) => (
-              <View style={[styles.button, pressed && styles.buttonPressed]}>
+              <View
+                style={[
+                  softSurface(outlineRadius, styles.button),
+                  { paddingVertical: padY },
+                  pressed && softSurfacePressed,
+                ]}
+              >
                 <Ionicons
                   name={provider.icon}
-                  size={18}
+                  size={icon}
                   color={colors.textPrimary}
                 />
               </View>
@@ -63,24 +79,20 @@ export function SocialAuthButtons({ onPress }: SocialAuthButtonsProps) {
 const styles = StyleSheet.create({
   wrap: {
     alignSelf: "stretch",
-    minHeight: 44,
-    alignItems: "center",
-    justifyContent: "center",
   },
   providersRow: {
     flexDirection: "row",
-    gap: 10,
-    alignItems: "center",
-    justifyContent: "center",
+    gap: 12,
+    alignItems: "stretch",
+    alignSelf: "stretch",
+  },
+  pressable: {
+    flex: 1,
+    minWidth: 0,
   },
   button: {
-    width: 44,
-    height: 44,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: outlineRadius,
-    backgroundColor: outlineFill,
-    ...outlineBorder,
+    overflow: "visible",
   },
-  buttonPressed: outlineBorderPressed,
 });

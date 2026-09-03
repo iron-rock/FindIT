@@ -9,13 +9,11 @@ export type RegisterFieldKey =
   | 'email'
   | 'password'
   | 'fullName'
-  | 'headline'
   | 'years'
   | 'stack'
   | 'position'
   | 'salary'
   | 'workFormat'
-  | 'selectedAiTools'
   | 'selectedAiModels'
   | 'aiTools'
   | 'github'
@@ -76,6 +74,7 @@ export const FINDER_REGISTER_STEPS: RegisterStepDef[] = [
   {
     id: 'highlights',
     kind: 'highlights',
+    titleKey: 'register.finder.highlightsTitle',
     skippable: false,
     fields: [GITHUB_FIELD],
   },
@@ -127,13 +126,11 @@ export const EMPTY_REGISTER_FORM: RegisterFormState = {
   email: '',
   password: '',
   fullName: '',
-  headline: '',
   years: '',
   stack: '',
   position: '',
   salary: '',
   workFormat: '',
-  selectedAiTools: '',
   selectedAiModels: '',
   aiTools: '',
   github: '',

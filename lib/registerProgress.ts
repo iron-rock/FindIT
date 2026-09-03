@@ -80,7 +80,7 @@ export async function saveRegisterStep(
       const { error: finderError } = await supabase.from('finder_profiles').upsert(
         {
           profile_id: userId,
-          headline: form.headline.trim() || null,
+          headline: form.position.trim() || null,
           years_experience: years,
         },
         { onConflict: 'profile_id' },
